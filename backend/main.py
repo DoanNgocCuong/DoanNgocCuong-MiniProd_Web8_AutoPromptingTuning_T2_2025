@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
+import logging
 
 # Load environment variables from .env file
 load_dotenv()
@@ -27,6 +28,10 @@ app.add_middleware(
 
 MAX_ITERATIONS = 5
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 @app.post("/api/generate-prompt", response_model=PromptResponse)
 async def generate_prompt_endpoint(request: PromptRequest):
     # Initial prompt generation
@@ -35,6 +40,9 @@ async def generate_prompt_endpoint(request: PromptRequest):
         request.samples,
         request.conditions
     )
+    
+    # Log the generated prompt
+    logger.info(f"API generated prompt:\n{prompt}")
     
     iteration = request.iteration
     optimization_history = []
