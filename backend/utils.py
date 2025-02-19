@@ -1,7 +1,7 @@
 import random
 import time
 from typing import List, Tuple
-from .models import Sample, TestCase
+from models import Sample, PromptTestCase
 
 def generate_prompt_from_samples(fmt: str, samples: List[Sample], conditions: str) -> str:
     """Generate a prompt based on format, samples and conditions"""
@@ -10,14 +10,14 @@ def generate_prompt_from_samples(fmt: str, samples: List[Sample], conditions: st
     cond_str = f"Conditions: {conditions}" if conditions else ""
     return f"{base}{sample_str}\n{cond_str}"
 
-def generate_test_cases(prompt: str) -> List[TestCase]:
+def generate_test_cases(prompt: str) -> List[PromptTestCase]:
     """Generate test cases for the given prompt"""
     test_cases = []
     for i in range(5):
         expected = f"Expected output {i}"
         actual = expected if random.random() > 0.3 else f"Wrong output {i}"
         test_cases.append(
-            TestCase(
+            PromptTestCase(
                 input=f"Test input {i}",
                 expected_output=expected,
                 actual_output=actual,
@@ -27,7 +27,7 @@ def generate_test_cases(prompt: str) -> List[TestCase]:
         )
     return test_cases
 
-def evaluate_prompt(prompt: str, test_cases: List[TestCase]) -> Tuple[float, float]:
+def evaluate_prompt(prompt: str, test_cases: List[PromptTestCase]) -> Tuple[float, float]:
     """Evaluate the prompt using test cases"""
     start = time.time()
     correct_cases = sum(1 for tc in test_cases if tc.is_correct)
@@ -35,7 +35,7 @@ def evaluate_prompt(prompt: str, test_cases: List[TestCase]) -> Tuple[float, flo
     response_time = time.time() - start
     return accuracy, response_time
 
-def update_prompt(current_prompt: str, test_cases: List[TestCase], accuracy: float) -> str:
+def update_prompt(current_prompt: str, test_cases: List[PromptTestCase], accuracy: float) -> str:
     """Update prompt based on evaluation results"""
     # In a real implementation, this would use ML to improve the prompt
     return current_prompt + f"\n[Updated based on accuracy: {accuracy:.2f}]" 

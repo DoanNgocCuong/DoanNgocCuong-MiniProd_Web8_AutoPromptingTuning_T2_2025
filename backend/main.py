@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .models import PromptRequest, PromptResponse, FeedbackRequest, OptimizationHistory
-from .utils import (
+from models import PromptRequest, PromptResponse, FeedbackRequest, OptimizationHistory
+from utils import (
     generate_prompt_from_samples,
     generate_test_cases,
     evaluate_prompt,

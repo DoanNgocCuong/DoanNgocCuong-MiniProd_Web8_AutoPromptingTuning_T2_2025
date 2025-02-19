@@ -5,7 +5,7 @@ class Sample(BaseModel):
     input: str
     output: str
 
-class TestCase(BaseModel):
+class PromptTestCase(BaseModel):
     input: str
     expected_output: str
     actual_output: str
@@ -25,7 +25,7 @@ class PromptRequest(BaseModel):
 
 class PromptResponse(BaseModel):
     generated_prompt: str
-    test_cases: List[TestCase]
+    test_cases: List[PromptTestCase]
     accuracy: float
     response_time: float
     iteration: int
