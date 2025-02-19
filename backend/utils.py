@@ -9,7 +9,7 @@ def generate_prompt_from_samples(fmt: str, samples: List[Sample], conditions: st
     """Generate a prompt based on format, samples and conditions using 4o-mini"""
     
     # Initialize OpenAI client
-    client = OpenAI()
+    client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
     
     # Format samples into input-output pairs
     sample_pairs = "\n".join([

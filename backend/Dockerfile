@@ -24,11 +24,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Final stage
 FROM python:3.11-slim
 
-ENV PORT=25043 \
-    PATH="/opt/venv/bin:$PATH" \
+ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    OPENAI_API_KEY=${OPENAI_API_KEY}
+    PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
@@ -36,7 +34,7 @@ WORKDIR /app
 COPY --from=builder /opt/venv /opt/venv
 
 # Copy only necessary files
-COPY ./main.py ./utils.py ./models.py ./
+COPY ./main.py ./utils.py ./models.py ./.env ./
 
 # Create non-root user
 RUN adduser --disabled-password --gecos '' appuser \

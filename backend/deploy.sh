@@ -82,8 +82,6 @@ check_status "Docker image built successfully" "Failed to build Docker image"
 print_status "Starting container..."
 docker run -d \
     -p $PORT:$PORT \
-    -e PORT=$PORT \
-    -e OPENAI_API_KEY=${OPENAI_API_KEY} \
     --name $IMAGE_NAME \
     $IMAGE_NAME
 check_status "Container started successfully" "Failed to start container"
