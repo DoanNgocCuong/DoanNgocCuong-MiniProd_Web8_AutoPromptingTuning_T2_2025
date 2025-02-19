@@ -48,32 +48,51 @@ def generate_test_cases(format_output: str, samples: List[Sample], conditions: s
             for s in samples
         ])
         
-        # Construct user message with clearer format
+        # Construct user message with clearer format and instructions
         user_message = f"""
-Please generate {num_cases} test cases for grammar correction with this format:
+Bạn là một Test Case Generator chuyên nghiệp. Nhiệm vụ của bạn là tạo ra {num_cases} test cases đa dạng và thử thách để kiểm tra chất lượng của một prompt.
 
-Format: {format_output}
-Conditions: {conditions}
+1. THÔNG TIN ĐẦU VÀO:
+Format yêu cầu: {format_output}
+Điều kiện: {conditions}
 
-Example:
+2. CÁC VÍ DỤ MẪU:
 {sample_pairs}
 
-For each test case, follow this EXACT format (no extra text):
+3. YÊU CẦU TEST CASES:
+- Mỗi test case phải KHÁC BIỆT với các ví dụ mẫu
+- Độ khó tăng dần từ dễ đến khó
+- Bao gồm các trường hợp đặc biệt và biên
+- Đảm bảo đa dạng về cấu trúc và nội dung
+
+4. CHO MỖI TEST CASE, TẠO:
+a) Input: Câu đầu vào cần xử lý
+b) Expected: Kết quả mong đợi (đúng ngữ pháp)
+c) Wrong: Một kết quả sai có thể xảy ra
+d) Score: Độ tương đồng (0.0-1.0) giữa Wrong và Expected
+
+5. FORMAT PHẢN HỒI CHÍNH XÁC:
 ---
 Input: <test input>
-Expected: <correct grammar>
-Wrong: <incorrect grammar>
-Score: <similarity score between 0.0-1.0>
+Expected: <correct output>
+Wrong: <incorrect output>
+Score: <similarity score>
 ---
 
-Generate {num_cases} test cases, each separated by ---
+QUAN TRỌNG:
+- KHÔNG thêm bất kỳ giải thích nào
+- KHÔNG thêm text ngoài format quy định
+- Mỗi test case phải được phân tách bằng dấu ---
+- Score phải là một số thập phân từ 0.0 đến 1.0
+
+Tạo {num_cases} test cases ngay bây giờ:
 """
         
         # Prepare messages
         messages = [
             {
                 "role": "system",
-                "content": "You are a Test Case Generator. Respond ONLY with test cases in the exact format requested."
+                "content": "Bạn là Test Case Generator. Tuân thủ CHÍNH XÁC format được yêu cầu."
             },
             {
                 "role": "user", 
