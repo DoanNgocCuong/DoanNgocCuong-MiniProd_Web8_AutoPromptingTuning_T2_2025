@@ -1,4 +1,4 @@
-```
+```bash
 # Set tên và email của bạn cho repository hiện tại
 
 git config --local user.name "Doan Ngoc Cuong"

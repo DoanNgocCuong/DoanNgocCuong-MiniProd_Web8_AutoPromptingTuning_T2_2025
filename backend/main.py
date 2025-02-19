@@ -1,98 +1,78 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import List, Optional
-import uvicorn
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from .models import PromptRequest, PromptResponse, FeedbackRequest, OptimizationHistory
+from .utils import (
+    generate_prompt_from_samples,
+    generate_test_cases,
+    evaluate_prompt,
+    update_prompt
+)
 
-app = FastAPI()
+app = FastAPI(title="Auto Prompting Tool API")
 
-# Enable CORS
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # In production, specify actual origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-class Sample(BaseModel):
-    input: str
-    output: str
-
-class PromptRequest(BaseModel):
-    format: str
-    samples: List[Sample]
-    conditions: Optional[str] = None
-
-class TestCase(BaseModel):
-    input: str
-    expected_output: str
-    actual_output: str
-    is_correct: bool
-
-class PromptResponse(BaseModel):
-    generated_prompt: str
-    test_cases: List[TestCase]
-    accuracy: float
+MAX_ITERATIONS = 5
 
 @app.post("/api/generate-prompt", response_model=PromptResponse)
-async def generate_prompt(request: PromptRequest):
-    try:
-        # Generate initial prompt based on format and samples
-        prompt = generate_initial_prompt(request)
-        
-        # Generate test cases
-        test_cases = generate_test_cases(request.samples)
-        
-        # Evaluate prompt
-        accuracy = evaluate_prompt(prompt, test_cases)
-        
-        return PromptResponse(
-            generated_prompt=prompt,
-            test_cases=test_cases,
-            accuracy=accuracy
+async def generate_prompt_endpoint(request: PromptRequest):
+    # Initial prompt generation
+    prompt = generate_prompt_from_samples(
+        request.format,
+        request.samples,
+        request.conditions
+    )
+    
+    iteration = request.iteration
+    optimization_history = []
+    
+    # Generate and evaluate test cases
+    test_cases = generate_test_cases(prompt)
+    accuracy, response_time = evaluate_prompt(prompt, test_cases)
+    
+    # Record initial results
+    optimization_history.append(
+        OptimizationHistory(
+            iteration=iteration,
+            accuracy=accuracy,
+            response_time=response_time
         )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    )
 
-def generate_initial_prompt(request: PromptRequest) -> str:
-    # TODO: Implement prompt generation logic
-    return f"""
-You are an AI assistant that helps with {request.format}
-Given input examples:
-{format_samples(request.samples)}
-Additional conditions:
-{request.conditions}
-    """
-
-def generate_test_cases(samples: List[Sample]) -> List[TestCase]:
-    # TODO: Implement test case generation
-    test_cases = []
-    for sample in samples:
-        test_cases.append(
-            TestCase(
-                input=sample.input,
-                expected_output=sample.output,
-                actual_output="",  # Will be filled during evaluation
-                is_correct=False
+    # Iterative improvement loop
+    while accuracy < 0.9 and iteration < MAX_ITERATIONS:
+        iteration += 1
+        prompt = update_prompt(prompt, test_cases, accuracy)
+        test_cases = generate_test_cases(prompt)
+        accuracy, response_time = evaluate_prompt(prompt, test_cases)
+        
+        optimization_history.append(
+            OptimizationHistory(
+                iteration=iteration,
+                accuracy=accuracy,
+                response_time=response_time
             )
         )
-    return test_cases
 
-def evaluate_prompt(prompt: str, test_cases: List[TestCase]) -> float:
-    # TODO: Implement evaluation logic
-    correct_count = 0
-    total_count = len(test_cases)
-    
-    # Simulate evaluation
-    for test_case in test_cases:
-        test_case.is_correct = True  # Placeholder
-        correct_count += 1
-        
-    return correct_count / total_count if total_count > 0 else 0
+    return PromptResponse(
+        generated_prompt=prompt,
+        test_cases=test_cases,
+        accuracy=accuracy,
+        response_time=response_time,
+        iteration=iteration,
+        optimization_history=optimization_history
+    )
 
-def format_samples(samples: List[Sample]) -> str:
-    return "\n".join([f"Input: {s.input}\nOutput: {s.output}" for s in samples])
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=25043) 
+@app.post("/api/feedback")
+async def feedback_endpoint(request: FeedbackRequest):
+    # Here you would typically store the feedback and potentially
+    # use it to improve the prompt generation system
+    print(f"Received feedback for prompt: {request.feedback}")
+    return {"message": "Feedback received successfully"} 
