@@ -1,5 +1,98 @@
 # MiniProd_Web8_AutoPromptingTuning_T2-2025
 
+## Project Overview
+
+Auto Prompting Tool for IELTS and The Coach App that optimizes prompt generation through automated testing and tuning.
+
+### 1. Objectives
+- Create an automated prompt generation tool with ~90% accuracy
+- Enable IELTS team to create prompts without prompting engineering expertise
+
+### 2. Technical Architecture
+
+#### Backend (Python FastAPI)
+- Port: 25043
+- Key Features:
+  - Prompt generation engine
+  - Automated test case generation (20-50 cases)
+  - Evaluation system
+  - Optimization loop
+
+#### Frontend (Bun + React)
+- Port: 25044
+- Features:
+  - Prompt input interface
+  - Sample management
+  - Test case visualization
+  - Real-time accuracy metrics
+
+### 3. Core Components
+
+1. Prompt Generation System
+```python
+# Core structure
+class PromptRequest:
+    format: str
+    samples: List[Sample]
+    conditions: str
+
+class Sample:
+    input: str
+    output: str
+```
+
+2. Evaluation System
+- Accuracy metrics
+- Response time tracking
+- Automated optimization loop
+
+3. User Interface
+- Sample input/output management
+- Test case monitoring
+- Manual intervention options
+
+### 4. Development Timeline
+- Estimate: 16 hours
+- Demo: Wednesday afternoon
+- Project completion: Thursday afternoon
+
+### 5. Deployment
+```yaml
+# docker-compose.yml structure
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "25043:25043"
+    volumes:
+      - ./backend:/app
+    environment:
+      - DEV_MODE=true
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "25044:25044"
+    volumes:
+      - ./frontend:/app
+```
+
+### 6. Development URLs
+- Backend: http://103.253.20.13:25043/
+- Frontend: http://103.253.20.13:25044
+
+### 7. Resources
+- Leveraging existing APO/APE research
+- Potential collaboration with team members
+
+### 8. Next Steps
+1. Set up development environment
+2. Implement core prompt generation
+3. Build test case generation system
+4. Create evaluation metrics
+5. Develop frontend interface
+6. Integration and testing
+
 1. Mục đích: 
 - Đóng gói 1 task bị lặp lại đã từ rất lâu (6 tháng mình thực tập). 
 

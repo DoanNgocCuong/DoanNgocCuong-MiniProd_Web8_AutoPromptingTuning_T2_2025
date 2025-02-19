@@ -1,0 +1,10 @@
+[install]
+frozen-lockfile = true
+
+[build]
+minify = true
+sourcemap = true
+
+[dev]
+port = 25044
+host = "0.0.0.0" 

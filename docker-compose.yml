@@ -1,36 +1,19 @@
-version: '3.8'
-
+version: '3'
 services:
   backend:
-    build: 
-      context: ./backend
+    build: ./backend
+    ports:
+      - "25043:25043"
+    volumes:
+      - ./backend:/app
     environment:
-      - GIN_MODE=release
-      - HOST=0.0.0.0
-      - PORT=25044
-      - GO111MODULE=on
-      - GOFLAGS=-v
-    network_mode: host
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "200k"
-        max-file: "10"
+      - DEV_MODE=true
 
   frontend:
-    build:
-      context: ./frontend
-    environment:
-      - NODE_ENV=production
-      - VITE_API_URL=http://103.253.20.13:25044
-      - PORT=25043
-      - DEBUG=serve*
+    build: ./frontend
+    ports:
+      - "25044:25044"
     volumes:
       - ./frontend:/app
-      - /app/node_modules
-    network_mode: host
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "200k"
-        max-file: "10"
+    depends_on:
+      - backend 
