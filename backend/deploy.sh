@@ -3,6 +3,7 @@
 # Default values
 PORT=25043
 IMAGE_NAME="auto-prompting-backend"
+CONTAINER_NAME="auto-prompting-backend-port 25043"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do

@@ -1,5 +1,6 @@
 import logging
 import os
+import openai
 from openai import OpenAI
 from typing import List
 from models import Sample, PromptTestCase

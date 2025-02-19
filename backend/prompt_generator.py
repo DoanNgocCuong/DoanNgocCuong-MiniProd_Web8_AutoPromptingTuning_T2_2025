@@ -3,6 +3,7 @@ import os
 from openai import OpenAI
 from typing import List
 from models import Sample
+import openai
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -49,10 +50,7 @@ def generate_prompt(format_output: str, samples: List[Sample], conditions: str) 
         api_key = validate_api_key()
         
         # Initialize OpenAI client with validated key
-        client = OpenAI(
-            api_key=api_key,
-            timeout=60.0
-        )
+        client = openai.OpenAI(api_key=api_key)
         
         # Format samples into input-output pairs
         sample_pairs = "\n".join([

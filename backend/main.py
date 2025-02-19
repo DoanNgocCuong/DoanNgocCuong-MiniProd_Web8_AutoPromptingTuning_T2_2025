@@ -6,6 +6,7 @@ import logging
 from typing import List
 import time
 from pydantic import BaseModel
+from evaluator import PromptEvaluator
 
 # Load environment variables from .env file
 load_dotenv()
@@ -47,6 +48,9 @@ MAX_ITERATIONS = 5
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Initialize evaluator
+evaluator = PromptEvaluator(max_workers=4, batch_size=4)
 
 @app.post("/api/generate-test-cases", response_model=TestCaseResponse)
 async def generate_test_cases_endpoint(request: TestCaseRequest):
@@ -186,19 +190,17 @@ async def generate_prompt_and_test_endpoint(request: PromptAndTestRequest):
 async def evaluate_prompt_endpoint(request: EvaluationRequest):
     """Evaluate a prompt against test cases"""
     try:
-        start_time = time.time()
-        
-        # Evaluate prompt against test cases
-        accuracy, response_time = evaluate_prompt(request.prompt, request.test_cases)
-        logger.info(f"Evaluation results - Accuracy: {accuracy}, Response time: {response_time}")
-        
-        total_time = time.time() - start_time
+        # Evaluate prompt
+        results = evaluator.evaluate_prompt(
+            prompt=request.prompt,
+            test_cases=request.test_cases
+        )
         
         return EvaluationResponse(
-            accuracy=accuracy,
-            response_time=response_time,
-            total_time=total_time,
-            test_results=request.test_cases  # Now includes actual outputs and is_correct flags
+            accuracy=results["accuracy"],
+            response_time=results["avg_response_time"],
+            total_time=results["total_time"],
+            test_results=results["test_results"]
         )
         
     except Exception as e:
