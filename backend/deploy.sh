@@ -54,7 +54,7 @@ check_status() {
 print_status "Checking Docker service..."
 if ! systemctl is-active --quiet docker; then
     print_status "Starting Docker service..."
-    sudo systemctl start docker
+    systemctl start docker
     check_status "Docker service started" "Failed to start Docker service"
 fi
 
@@ -70,9 +70,12 @@ if [ "$(docker ps -q -f name=$IMAGE_NAME)" ]; then
     check_status "Container removed successfully" "Failed to remove container"
 fi
 
-# Build the Docker image (with sudo)
+# Build the Docker image with optimizations
 print_status "Building Docker image..."
-sudo docker build -t $IMAGE_NAME .
+sudo docker build \
+    --compress \
+    --force-rm \
+    -t $IMAGE_NAME .
 check_status "Docker image built successfully" "Failed to build Docker image"
 
 # Run the container
