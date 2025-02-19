@@ -2,6 +2,8 @@ import random
 import time
 import os
 from openai import OpenAI
+import os
+from openai import OpenAI
 from typing import List, Tuple
 from models import Sample, PromptTestCase
 
