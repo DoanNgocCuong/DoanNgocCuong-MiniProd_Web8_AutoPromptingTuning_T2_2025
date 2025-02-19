@@ -60,13 +60,13 @@ fi
 
 # Stop and remove existing container if it exists
 print_status "Checking for existing container..."
-if [ "$(docker ps -q -f name=$IMAGE_NAME)" ]; then
+if [ "$(docker ps -aq -f name=$IMAGE_NAME)" ]; then
     print_status "Stopping existing container..."
-    docker stop $IMAGE_NAME
+    docker stop $IMAGE_NAME || true
     check_status "Container stopped successfully" "Failed to stop container"
     
     print_status "Removing existing container..."
-    docker rm $IMAGE_NAME
+    docker rm -f $IMAGE_NAME || true
     check_status "Container removed successfully" "Failed to remove container"
 fi
 

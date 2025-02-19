@@ -61,4 +61,8 @@ logs/
 
 # System
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+# Keep Python modules
+!prompt_generator.py
+!test_case_generator.py 

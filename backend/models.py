@@ -33,4 +33,36 @@ class PromptResponse(BaseModel):
 
 class FeedbackRequest(BaseModel):
     prompt: str
-    feedback: str 
+    feedback: str
+
+class TestCaseRequest(BaseModel):
+    format: str
+    samples: List[Sample]
+    conditions: str
+    num_cases: int = 5
+
+class TestCaseResponse(BaseModel):
+    test_cases: List[PromptTestCase]
+    total_cases: int
+    generation_time: float
+
+class PromptAndTestRequest(BaseModel):
+    format: str
+    samples: List[Sample]
+    conditions: Optional[str] = None
+    num_test_cases: int = 5
+
+class PromptAndTestResponse(BaseModel):
+    prompt: str
+    test_cases: List[PromptTestCase]
+    total_time: float
+
+class EvaluationRequest(BaseModel):
+    prompt: str
+    test_cases: List[PromptTestCase]
+
+class EvaluationResponse(BaseModel):
+    accuracy: float
+    response_time: float
+    total_time: float
+    test_results: List[PromptTestCase] 
