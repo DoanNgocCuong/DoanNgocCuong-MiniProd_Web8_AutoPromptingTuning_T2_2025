@@ -34,8 +34,8 @@ WORKDIR /app
 # Copy virtual environment from builder
 COPY --from=builder /opt/venv /opt/venv
 
-# Copy only necessary files
-COPY ./main.py ./utils.py ./models.py ./evaluator.py ./prompt_generator.py ./test_case_generator.py ./.env ./
+# Copy all Python files
+COPY ./*.py ./
 
 # Create non-root user
 RUN adduser --disabled-password --gecos '' appuser \

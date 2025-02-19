@@ -6,7 +6,8 @@ import logging
 from typing import List
 import time
 from pydantic import BaseModel
-from evaluator import PromptEvaluator
+from run_prompt_with_testcases import PromptTestRunner
+from run_prompt_evaluate import PromptEvaluator
 
 # Load environment variables from .env file
 load_dotenv()
@@ -23,7 +24,11 @@ from models import (
     PromptAndTestRequest,
     PromptAndTestResponse,
     EvaluationRequest,
-    EvaluationResponse
+    EvaluationResponse,
+    RunPromptRequest,
+    RunPromptResponse,
+    EvaluatePromptRequest,
+    EvaluatePromptResponse
 )
 from utils import (
     generate_prompt_from_samples,
@@ -49,8 +54,9 @@ MAX_ITERATIONS = 5
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize evaluator
-evaluator = PromptEvaluator(max_workers=4, batch_size=4)
+# Initialize runners
+test_runner = PromptTestRunner()
+evaluator = PromptEvaluator()
 
 @app.post("/api/generate-test-cases", response_model=TestCaseResponse)
 async def generate_test_cases_endpoint(request: TestCaseRequest):
@@ -186,26 +192,48 @@ async def generate_prompt_and_test_endpoint(request: PromptAndTestRequest):
             detail=f"Failed to generate prompt and test cases: {str(e)}"
         )
 
-@app.post("/api/evaluate-prompt", response_model=EvaluationResponse)
-async def evaluate_prompt_endpoint(request: EvaluationRequest):
-    """Evaluate a prompt against test cases"""
+@app.post("/api/run-prompt", response_model=RunPromptResponse)
+async def run_prompt_endpoint(request: RunPromptRequest):
+    """Chạy prompt với test cases và trả về kết quả"""
     try:
-        # Evaluate prompt
-        results = evaluator.evaluate_prompt(
+        start_time = time.time()
+        
+        # Chạy prompt với test cases
+        test_cases = test_runner.run_with_testcases(
             prompt=request.prompt,
             test_cases=request.test_cases
         )
         
-        return EvaluationResponse(
-            accuracy=results["accuracy"],
-            response_time=results["avg_response_time"],
-            total_time=results["total_time"],
-            test_results=results["test_results"]
+        total_time = time.time() - start_time
+        
+        return RunPromptResponse(
+            test_cases=test_cases,
+            total_time=total_time
         )
         
     except Exception as e:
-        logger.error(f"Error in evaluate_prompt: {str(e)}", exc_info=True)
+        logger.error(f"Error running prompt: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to evaluate prompt: {str(e)}"
+            detail=f"Failed to run prompt: {str(e)}"
+        )
+
+@app.post("/api/evaluate-results", response_model=EvaluatePromptResponse) 
+async def evaluate_results_endpoint(request: EvaluatePromptRequest):
+    """Đánh giá kết quả của prompt với expected output"""
+    try:
+        # Đánh giá test cases
+        results = evaluator.evaluate_testcases(request.test_cases)
+        
+        return EvaluatePromptResponse(
+            accuracy=results.accuracy,
+            avg_similarity=results.avg_similarity,
+            test_cases=results.test_cases
+        )
+        
+    except Exception as e:
+        logger.error(f"Error evaluating results: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to evaluate results: {str(e)}"
         ) 
