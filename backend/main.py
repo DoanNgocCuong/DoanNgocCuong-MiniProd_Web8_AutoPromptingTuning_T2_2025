@@ -75,4 +75,8 @@ async def feedback_endpoint(request: FeedbackRequest):
     # Here you would typically store the feedback and potentially
     # use it to improve the prompt generation system
     print(f"Received feedback for prompt: {request.feedback}")
-    return {"message": "Feedback received successfully"} 
+    return {"message": "Feedback received successfully"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"} 

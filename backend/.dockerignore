@@ -1,12 +1,28 @@
-__pycache__
-*.pyc
-*.pyo
-*.pyd
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
 .Python
 env/
 venv/
 .env
 *.log
-.git
+
+# Development
+.git/
 .gitignore
-tests/ 
+.pytest_cache/
+tests/
+*.md
+Dockerfile
+docker-compose.yml
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# System
+.DS_Store 
