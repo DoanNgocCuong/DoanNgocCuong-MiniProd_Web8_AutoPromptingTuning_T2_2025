@@ -7,6 +7,7 @@ import httpx
 from models import PromptTestCase
 import concurrent.futures
 import threading
+from difflib import SequenceMatcher
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -33,6 +34,18 @@ class PromptEvaluator:
             http_client=http_client
         )
 
+    def calculate_similarity(self, text1: str, text2: str) -> float:
+        """Tính độ tương đồng giữa 2 text"""
+        if text1 == text2:
+            return 1.0
+        
+        # Có thể dùng các thuật toán so sánh text như:
+        # - Levenshtein distance
+        # - Cosine similarity
+        # - Jaccard similarity
+        # Tạm thời dùng simple ratio
+        return SequenceMatcher(None, text1, text2).ratio()
+
     def evaluate_single_test(self, prompt: str, test_case: PromptTestCase) -> Tuple[bool, float, float]:
         """Evaluate a single test case"""
         start_time = time.time()
@@ -40,7 +53,9 @@ class PromptEvaluator:
         
         while try_count < 3:
             try:
-                # Gửi prompt + input đến OpenAI
+                # Log test case being evaluated
+                logger.info(f"Evaluating test case: {test_case.input}")
+                
                 messages = [
                     {"role": "system", "content": prompt},
                     {"role": "user", "content": test_case.input}
@@ -53,18 +68,31 @@ class PromptEvaluator:
                     max_tokens=2048
                 )
                 
-                # Lấy output từ prompt
                 prompt_output = completion.choices[0].message.content.strip()
                 response_time = time.time() - start_time
                 
-                # So sánh với expected output
-                is_correct = prompt_output == test_case.expected_output
+                # Calculate similarity
+                similarity = self.calculate_similarity(prompt_output, test_case.expected_output)
                 
-                # Cập nhật test case
-                test_case.prompt_output = prompt_output  # Lưu output từ prompt
+                # Determine correctness (can use threshold for similarity)
+                is_correct = similarity > 0.95  # Consider correct if >95% similar
+                
+                # Update test case
+                test_case.prompt_output = prompt_output
                 test_case.is_correct = is_correct
+                test_case.similarity_score = similarity
                 
-                return is_correct, response_time, 0.7
+                # Log results
+                logger.info(f"""
+                    Test case results:
+                    Input: {test_case.input}
+                    Expected: {test_case.expected_output}
+                    Got: {prompt_output}
+                    Similarity: {similarity:.2f}
+                    Correct: {is_correct}
+                """)
+                
+                return is_correct, response_time, similarity
                 
             except Exception as e:
                 try_count += 1
