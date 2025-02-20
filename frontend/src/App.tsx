@@ -41,21 +41,29 @@ const API_BASE_URL = 'http://103.253.20.13:25043/api';
 
 const apiService = {
   async post<T>(endpoint: string, data: any): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(data)
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || 'API request failed');
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        // Xử lý error message từ API
+        throw new Error(responseData.detail || JSON.stringify(responseData));
+      }
+
+      return responseData;
+    } catch (error) {
+      // Log error chi tiết để debug
+      console.error('API Error:', error);
+      throw error;
     }
-
-    return response.json();
   }
 };
 
@@ -188,34 +196,40 @@ const PromptTool: React.FC = () => {
     setError(null);
 
     try {
-      console.log('Running prompt with:', {
+      console.log('Running prompt with data:', {
         prompt: generatedPrompt,
-        test_cases: promptTestCases
+        test_cases: promptTestCases.map(tc => ({
+          input: tc.input,
+          expected_output: tc.expected_output,
+          model: tc.model || 'GPT-4',
+          system_prompt: tc.system_prompt || '',
+          conversation_history: tc.conversation_history || ''
+        }))
       });
 
       const response = await apiService.post<RunPromptResponse>('/run-prompt', {
         prompt: generatedPrompt,
-        test_cases: promptTestCases
+        test_cases: promptTestCases.map(tc => ({
+          input: tc.input,
+          expected_output: tc.expected_output,
+          model: tc.model || 'GPT-4',
+          system_prompt: tc.system_prompt || '',
+          conversation_history: tc.conversation_history || ''
+        }))
       });
 
-      // Kiểm tra response
       if (!response.test_cases?.length) {
         throw new Error('No test cases in response');
       }
 
-      // Chỉ cập nhật test cases, không chuyển step
       setPromptTestCases(response.test_cases);
 
-      // Pre-fetch evaluation result nhưng không hiển thị
+      // Pre-fetch evaluation
       const evalResponse = await apiService.post<EvaluationResult>('/evaluate-results', {
         test_cases: response.test_cases
       });
 
-      // Lưu evaluation result để sẵn sàng cho Step 3
       setEvaluationResult(evalResponse);
-
-      // Không tự động chuyển sang Step 3
-      // setCurrentStep(3); <- Bỏ dòng này
 
     } catch (err) {
       console.error('Error in run prompt:', err);
@@ -274,6 +288,11 @@ const PromptTool: React.FC = () => {
 
   const handleTestCaseDelete = (index: number) => {
     setPromptTestCases(promptTestCases.filter((_, i) => i !== index));
+  };
+
+  // Add new handler for replacing all test cases
+  const handleTestCasesReplace = (newTestCases: TestCase[]) => {
+    setPromptTestCases(newTestCases);
   };
 
   // Memoized chart data
@@ -337,6 +356,8 @@ const PromptTool: React.FC = () => {
             onTestCaseEdit={handleTestCaseEdit}
             onTestCaseAdd={handleTestCaseAdd}
             onTestCaseDelete={handleTestCaseDelete}
+            setError={setError}
+            onTestCasesReplace={handleTestCasesReplace}
           />
         )}
 
