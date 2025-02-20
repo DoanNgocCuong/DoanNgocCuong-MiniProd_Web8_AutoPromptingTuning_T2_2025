@@ -11,14 +11,25 @@ export const apiService = {
         body: JSON.stringify(data),
       });
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'API request failed');
+        // Xử lý chi tiết error message từ API
+        const errorMessage = responseData.detail || 
+                           (typeof responseData === 'object' ? JSON.stringify(responseData) : responseData) ||
+                           'API request failed';
+        throw new Error(errorMessage);
       }
 
-      return await response.json();
+      return responseData;
     } catch (error) {
-      console.error('API Error:', error);
+      // Log chi tiết error để debug
+      console.error('API Error details:', {
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        endpoint,
+        requestData: data
+      });
       throw error;
     }
   }

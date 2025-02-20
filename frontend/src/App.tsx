@@ -213,16 +213,15 @@ const PromptTool: React.FC = () => {
     setError(null);
 
     try {
-      // Chuẩn bị test cases theo đúng format API yêu cầu
+      // Format test cases cho đúng với API
       const formattedTestCases = promptTestCases.map(tc => ({
         input: tc.input,
         expected_output: tc.expected_output,
+        prompt_output: typeof tc.prompt_output === 'string' ? 
+          tc.prompt_output : 
+          tc.prompt_output?.output || '',
         model: tc.model || 'GPT-4',
-        system_prompt: tc.system_prompt || '',
-        conversation_history: tc.conversation_history || '',
-        // Thêm các trường bắt buộc với giá trị mặc định
         is_correct: false,
-        prompt_output: '',
         similarity_score: 0
       }));
 
@@ -243,9 +242,18 @@ const PromptTool: React.FC = () => {
       // Cập nhật state với kết quả từ API
       setPromptTestCases(response.test_cases);
 
-      // Pre-fetch evaluation
+      // Pre-fetch evaluation với format đúng
       const evalResponse = await apiService.post<EvaluationResult>('/evaluate-results', {
-        test_cases: response.test_cases
+        test_cases: response.test_cases.map(tc => ({
+          input: tc.input,
+          expected_output: tc.expected_output,
+          prompt_output: typeof tc.prompt_output === 'string' ? 
+            tc.prompt_output : 
+            tc.prompt_output?.output || '',
+          model: tc.model || 'GPT-4',
+          is_correct: tc.is_correct,
+          similarity_score: tc.similarity_score
+        }))
       });
 
       setEvaluationResult(evalResponse);
@@ -254,7 +262,7 @@ const PromptTool: React.FC = () => {
       console.error('Error in run prompt:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to run prompt';
       setError(errorMessage);
-      toast.error(errorMessage); // Thêm thông báo lỗi cho người dùng
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
