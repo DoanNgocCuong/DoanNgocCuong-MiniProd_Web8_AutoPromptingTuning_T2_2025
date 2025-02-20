@@ -25,6 +25,7 @@ interface Step2Props {
   setError: (error: string | null) => void;
   onTestCasesReplace: (testCases: TestCase[]) => void;
   inputOutputRows: InputOutputRow[];
+  onNext: () => void;
 }
 
 const getPromptOutput = (testCase: TestCase): string => {
@@ -106,7 +107,8 @@ export const Step2Results: React.FC<Step2Props> = ({
   onTestCaseDelete,
   setError,
   onTestCasesReplace,
-  inputOutputRows
+  inputOutputRows,
+  onNext
 }) => {
   const [isEditingPrompt, setIsEditingPrompt] = useState(false);
   const [editedPrompt, setEditedPrompt] = useState(generated_prompt);
@@ -539,6 +541,12 @@ export const Step2Results: React.FC<Step2Props> = ({
           className="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
         >
           Back
+        </button>
+        <button
+          onClick={onNext}
+          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+        >
+          Next
         </button>
       </div>
     </div>

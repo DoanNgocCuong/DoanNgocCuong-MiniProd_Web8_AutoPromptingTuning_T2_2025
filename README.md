@@ -32,5 +32,26 @@ Estimate: 16h - Chiều T4 demo - Chiều T5 đóng
 5. Update Prompt.
 6. Lặp lại bước 3, 4, 5.
 
+
+
+```bash
+🔥 Streak 12: 🔥 SHARING WITH YOU A TOOL I BUILT IN 15 HOURS: ⚡️ Prompting Automation Generate, Tuning and Evaluation 🚀
+GitHub link in the comments below.
+
+✨ Key functionalities:
+1. 🤖 Automatically generates Prompts and Test Cases. 
+2. ⚙️ Automates the execution of Prompts with test cases. 
+3. 🧪 Automatically evaluates execution results. 
+
+🛠️ Version 1:
+✅ The full workflow is functional. However, ⚡ steps 1 and 3 need further prompt tuning. 
+🚀 Step 2 is fully operational and can work independently, reducing ⏱️ 80% of the time required for Prompt Engineering. 
+
+#wecommit100x #wecommit100xshare 
+#codemely #aiteam #production #aiteam_codemely
+#prompting_engineering 
+#aicode #react #typescripts #tailwind
+```
+
 ![](v2_step1_GeneratePromptAndTestCases.png)
 ![](v2_step2_RunPrompt.png)

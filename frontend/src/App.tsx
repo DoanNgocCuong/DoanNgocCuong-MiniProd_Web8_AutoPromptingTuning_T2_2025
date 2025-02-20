@@ -344,6 +344,11 @@ const PromptTool: React.FC = () => {
     }
   }, [currentStep, generatedPrompt, promptTestCases]);
 
+  // Add new function to handle next step
+  const handleNextFromStep2 = () => {
+    setCurrentStep(3);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -387,17 +392,18 @@ const PromptTool: React.FC = () => {
             onTestCaseDelete={handleTestCaseDelete}
             setError={setError}
             onTestCasesReplace={handleTestCasesReplace}
-            inputOutputRows={inputOutputRows.map(row => ({
-              ...row,
-              response_time: 0 // Thêm default response_time
-            }))}
+            inputOutputRows={inputOutputRows}
+            onNext={handleNextFromStep2}
           />
         )}
 
         {currentStep === 3 && evaluationResult && (
           <Step3Evaluation
             evaluationResult={evaluationResult}
+            testCases={promptTestCases}
             onBack={handleBack}
+            onEvaluate={handleRunPrompt}
+            loading={loading}
           />
         )}
       </div>
