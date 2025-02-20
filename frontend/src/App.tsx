@@ -7,6 +7,14 @@ import { Step1Input } from './components/Step1Input';
 import { Step2Results } from './components/Step2Results';
 import { Step3Evaluation } from './components/Step3Evaluation';
 import { StepIndicator } from './components/StepIndicator';
+import { 
+  TestCase, 
+  PromptOutput,
+  GenerateResponse,
+  RunPromptResponse,
+  EvaluationResult,
+  ApiResponse
+} from './types';
 
 // Register ChartJS components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -15,36 +23,6 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 interface InputOutputRow {
   input: string;
   output: string;
-}
-
-interface TestCase {
-  input: string;
-  expected_output: string;
-  prompt_output: string;
-  is_correct: boolean;
-  similarity_score: number;
-}
-
-interface GenerateResponse {
-  generated_prompt: string;
-  test_cases: TestCase[];
-  total_time: number;
-}
-
-interface RunPromptResponse {
-  test_cases: TestCase[];
-  total_time: number;
-}
-
-interface EvaluationResult {
-  accuracy: number;
-  avg_similarity: number;
-  test_cases: TestCase[];
-}
-
-interface ApiResponse<T> {
-  data?: T;
-  error?: string;
 }
 
 // Add interface for request data
@@ -161,7 +139,7 @@ const PromptTool: React.FC = () => {
     }
   };
 
-  // Step 2: Run Prompt
+  // Step 2: Run Prompt (không tự động chuyển sang step 3)
   const handleRunPrompt = async () => {
     setLoading(true);
     setError(null);
@@ -208,7 +186,12 @@ const PromptTool: React.FC = () => {
 
   const handleTestCaseEdit = (index: number, updatedTestCase: TestCase) => {
     const newTestCases = [...promptTestCases];
-    newTestCases[index] = updatedTestCase;
+    newTestCases[index] = {
+      ...updatedTestCase,
+      prompt_output: updatedTestCase.prompt_output || "",
+      is_correct: false,
+      similarity_score: 0
+    };
     setPromptTestCases(newTestCases);
   };
 

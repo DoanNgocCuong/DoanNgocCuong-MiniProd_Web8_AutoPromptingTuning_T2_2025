@@ -3,10 +3,16 @@ export interface InputOutputRow {
   output: string;
 }
 
+export interface PromptOutput {
+  input: string;
+  output: string;
+  response_time: number;
+}
+
 export interface TestCase {
   input: string;
   expected_output: string;
-  prompt_output: string;
+  prompt_output: PromptOutput | string;
   is_correct: boolean;
   similarity_score: number;
 }

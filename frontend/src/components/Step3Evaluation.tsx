@@ -1,11 +1,17 @@
 import React from 'react';
 import { Doughnut } from "react-chartjs-2";
-import { EvaluationResult } from '../types';
+import { EvaluationResult, TestCase, PromptOutput } from '../types';
 
 interface Step3Props {
   evaluationResult: EvaluationResult;
   onBack: () => void;
 }
+
+const getPromptOutput = (testCase: TestCase): string => {
+  if (!testCase.prompt_output) return "";
+  if (typeof testCase.prompt_output === "string") return testCase.prompt_output;
+  return testCase.prompt_output.output;
+};
 
 export const Step3Evaluation: React.FC<Step3Props> = ({
   evaluationResult,
@@ -67,9 +73,11 @@ export const Step3Evaluation: React.FC<Step3Props> = ({
                   <h4 className="text-sm font-medium text-gray-500">Expected Output</h4>
                   <p className="mt-1">{testCase.expected_output}</p>
                 </div>
-                <div>
+                <div className="col-span-2">
                   <h4 className="text-sm font-medium text-gray-500">Prompt Output</h4>
-                  <p className="mt-1">{testCase.prompt_output}</p>
+                  <pre className="mt-1 whitespace-pre-wrap">
+                    {getPromptOutput(testCase)}
+                  </pre>
                 </div>
                 <div>
                   <h4 className="text-sm font-medium text-gray-500">Result</h4>

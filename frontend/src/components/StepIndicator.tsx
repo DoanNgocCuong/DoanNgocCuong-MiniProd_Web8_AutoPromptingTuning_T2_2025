@@ -14,12 +14,23 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
   active, 
   completed 
 }) => (
-  <div className={`flex items-center ${completed ? "text-green-500" : active ? "text-blue-600" : "text-gray-400"}`}>
-    <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 
-      ${completed ? "border-green-500 bg-green-50" : active ? "border-blue-600 bg-blue-50" : "border-gray-300"}`}>
+  <div className="flex items-center">
+    <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 
+      ${active ? 'border-blue-600 text-blue-600' : 
+        completed ? 'border-green-500 bg-green-500 text-white' : 
+        'border-gray-300 text-gray-300'}`}
+    >
       {completed ? <FiCheck /> : step}
     </div>
-    <span className="ml-2 font-medium">{title}</span>
+    <span className={`ml-2 text-sm font-medium ${
+      active ? 'text-blue-600' : 
+      completed ? 'text-green-500' : 
+      'text-gray-500'
+    }`}>
+      {step === 1 && "Generate Prompt & Test Cases"}
+      {step === 2 && "Run Prompt"}
+      {step === 3 && "Evaluation"}
+    </span>
     {step < 3 && <FiChevronRight className="mx-4" />}
   </div>
 ); 

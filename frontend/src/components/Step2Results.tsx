@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TestCase } from '../types';
+import { TestCase, PromptOutput } from '../types';
 
 interface Step2Props {
   generated_prompt: string;
@@ -13,6 +13,20 @@ interface Step2Props {
   onTestCaseAdd: () => void;
   onTestCaseDelete: (index: number) => void;
 }
+
+const getPromptOutput = (testCase: TestCase): string => {
+  console.log('Processing test case:', testCase);
+  if (!testCase.prompt_output) {
+    console.log('No prompt output');
+    return "";
+  }
+  if (typeof testCase.prompt_output === "string") {
+    console.log('String prompt output:', testCase.prompt_output);
+    return testCase.prompt_output;
+  }
+  console.log('Object prompt output:', testCase.prompt_output);
+  return testCase.prompt_output.output;
+};
 
 export const Step2Results: React.FC<Step2Props> = ({
   generated_prompt,
@@ -34,6 +48,11 @@ export const Step2Results: React.FC<Step2Props> = ({
     console.log('Current prompt value:', generated_prompt);
     console.log('Current editedPrompt value:', editedPrompt);
   }, [generated_prompt, editedPrompt]);
+
+  // Add useEffect to monitor test cases changes
+  useEffect(() => {
+    console.log('Test cases updated:', testCases);
+  }, [testCases]);
 
   const handlePromptSave = () => {
     console.log('Saving new prompt:', editedPrompt);
@@ -118,6 +137,16 @@ export const Step2Results: React.FC<Step2Props> = ({
                     onChange={(e) => onTestCaseEdit(index, { ...testCase, expected_output: e.target.value })}
                   />
                 </div>
+                {testCase.prompt_output && (
+                  <div className="col-span-2">
+                    <h4 className="text-sm font-medium text-gray-500">Prompt Output</h4>
+                    <div className="mt-1 p-2 bg-gray-100 rounded-md">
+                      <pre className="whitespace-pre-wrap text-sm">
+                        {getPromptOutput(testCase)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
                 <div className="col-span-2 flex justify-end">
                   <button
                     onClick={() => onTestCaseDelete(index)}
