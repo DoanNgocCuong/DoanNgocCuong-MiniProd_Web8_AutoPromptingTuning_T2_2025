@@ -55,3 +55,5 @@ GitHub link in the comments below.
 
 ![](v2_step1_GeneratePromptAndTestCases.png)
 ![](v2_step2_RunPrompt.png)
+![](v2_step3_EvaluatePromptRun.png)
+![](time_releasev1.1.png)
