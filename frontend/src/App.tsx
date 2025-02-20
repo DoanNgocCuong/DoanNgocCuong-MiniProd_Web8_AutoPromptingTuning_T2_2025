@@ -16,7 +16,6 @@ interface TestCase {
   output?: string;
 }
 
-
 const PromptInterface: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
