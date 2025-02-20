@@ -168,35 +168,44 @@ export const Step2Results: React.FC<Step2Props> = ({
             throw new Error('No data found in Excel file');
           }
 
+          // Log để debug
+          console.log('Excel data:', jsonData);
+
           // Simulate progress
           let currentProgress = 0;
           const interval = setInterval(() => {
             currentProgress += 10;
-            setProgress(currentProgress);
+            setProgress(Math.min(currentProgress, 100));
             if (currentProgress >= 100) {
               clearInterval(interval);
             }
           }, 200);
 
-          const newTestCases: TestCase[] = jsonData.map(row => ({
+          // Convert tất cả rows thành test cases
+          const newTestCases: TestCase[] = jsonData.map((row, index) => ({
             model: row.model || 'GPT-4',
             system_prompt: row.system_prompt || '',
             conversation_history: row.conversation_history || '',
             input: row.input || '',
             expected_output: row.expected_output || '',
-            prompt_output: '',
+            prompt_output: '',  // Khởi tạo rỗng
             is_correct: false,
             similarity_score: 0
           }));
 
+          // Log để debug
+          console.log('Converted test cases:', newTestCases);
+
+          // Replace all test cases
           onTestCasesReplace(newTestCases);
           
           if (fileInputRef.current) {
             fileInputRef.current.value = '';
           }
 
-          toast.success('File processed successfully!');
-          addLog('success', `Processed ${newTestCases.length} test cases`);
+          toast.success(`Imported ${newTestCases.length} test cases successfully!`);
+          addLog('success', `Processed ${newTestCases.length} test cases from Excel file`);
+
         } catch (error) {
           console.error('Error processing Excel file:', error);
           toast.error('Failed to process file');
@@ -217,7 +226,8 @@ export const Step2Results: React.FC<Step2Props> = ({
 
       reader.readAsBinaryString(file);
       toast.info('Processing file...');
-      addLog('success', `File '${file.name}' uploaded`);
+      addLog('success', `Started processing file '${file.name}'`);
+
     } catch (error) {
       toast.error('Upload failed');
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -227,13 +237,22 @@ export const Step2Results: React.FC<Step2Props> = ({
 
   // Thêm hàm để tạo và download template
   const downloadTemplate = () => {
-    const template: ExcelTestCase[] = [{
-      model: 'GPT-4',
-      system_prompt: 'Example system prompt',
-      conversation_history: 'Example conversation',
-      input: 'Example input',
-      expected_output: 'Example output'
-    }];
+    const template: ExcelTestCase[] = [
+      {
+        model: 'GPT-4',
+        system_prompt: 'Example system prompt',
+        conversation_history: 'Example conversation',
+        input: 'Example input 1',
+        expected_output: 'Example output 1'
+      },
+      {
+        model: 'GPT-4',
+        system_prompt: 'Another system prompt',
+        conversation_history: 'Another conversation',
+        input: 'Example input 2', 
+        expected_output: 'Example output 2'
+      }
+    ];
 
     const ws = XLSX.utils.json_to_sheet(template);
     const wb = XLSX.utils.book_new();
