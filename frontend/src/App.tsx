@@ -3,6 +3,10 @@ import { FiChevronRight, FiTrash2, FiCheck } from "react-icons/fi";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
+import { Step1Input } from './components/Step1Input';
+import { Step2Results } from './components/Step2Results';
+import { Step3Evaluation } from './components/Step3Evaluation';
+import { StepIndicator } from './components/StepIndicator';
 
 // Register ChartJS components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -77,32 +81,36 @@ const apiService = {
   }
 };
 
-// Components
-interface StepIndicatorProps {
-  step: number;
-  title: string;
-  active: boolean;
-  completed: boolean;
-}
-
-const StepIndicator: React.FC<StepIndicatorProps> = ({ step, title, active, completed }) => (
-  <div className={`flex items-center ${completed ? "text-green-500" : active ? "text-blue-600" : "text-gray-400"}`}>
-    <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 
-      ${completed ? "border-green-500 bg-green-50" : active ? "border-blue-600 bg-blue-50" : "border-gray-300"}`}>
-      {completed ? <FiCheck /> : step}
-    </div>
-    <span className="ml-2 font-medium">{title}</span>
-    {step < 3 && <FiChevronRight className="mx-4" />}
-  </div>
-);
-
 // Main Component
 const PromptTool: React.FC = () => {
   // State
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const [jsonInput, setJsonInput] = useState<string>("");
-  const [inputOutputRows, setInputOutputRows] = useState<InputOutputRow[]>([{ input: "", output: "" }]);
-  const [conditions, setConditions] = useState<string>("");
+  const [jsonInput, setJsonInput] = useState<string>(
+    'Input: "CHECK GRAMMAR"\n' +
+    'Output: "{corrected_text}"\n\n' +
+    'Example:\n' +
+    'Input: "This is a sentnce with an error."\n' +
+    'Output: "This is a sentence with an error."'
+  );
+  const [inputOutputRows, setInputOutputRows] = useState<InputOutputRow[]>([
+    { 
+      input: "This is a sentnce with an error.", 
+      output: "This is a sentence with an error." 
+    },
+    { 
+      input: "He go to the store.",
+      output: "He goes to the store."
+    },
+    {
+      input: "She dont like apples.",
+      output: "She doesn't like apples."
+    }
+  ]);
+  const [conditions, setConditions] = useState<string>(
+    "1. Correct all grammatical errors.\n" +
+    "2. Maintain the original meaning of the sentence.\n" +
+    "3. Provide clear and concise corrections."
+  );
   const [testCases, setTestCases] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -193,6 +201,34 @@ const PromptTool: React.FC = () => {
 
   const handleBack = () => setCurrentStep(currentStep - 1);
 
+  // Add new handlers for Step 2 CRUD operations
+  const handlePromptEdit = (newPrompt: string) => {
+    setGeneratedPrompt(newPrompt);
+  };
+
+  const handleTestCaseEdit = (index: number, updatedTestCase: TestCase) => {
+    const newTestCases = [...promptTestCases];
+    newTestCases[index] = updatedTestCase;
+    setPromptTestCases(newTestCases);
+  };
+
+  const handleTestCaseAdd = () => {
+    setPromptTestCases([
+      ...promptTestCases,
+      {
+        input: "",
+        expected_output: "",
+        prompt_output: "",
+        is_correct: false,
+        similarity_score: 0
+      }
+    ]);
+  };
+
+  const handleTestCaseDelete = (index: number) => {
+    setPromptTestCases(promptTestCases.filter((_, i) => i !== index));
+  };
+
   // Memoized chart data
   const chartData = useMemo(() => ({
     labels: ["Passed", "Failed"],
@@ -209,227 +245,49 @@ const PromptTool: React.FC = () => {
         <div className="flex justify-center mb-8">
           <div className="flex items-center">
             <StepIndicator step={1} title="Input" active={currentStep === 1} completed={currentStep > 1} />
-            <StepIndicator step={2} title="Execution" active={currentStep === 2} completed={currentStep > 2} />
+            <StepIndicator step={2} title="Results" active={currentStep === 2} completed={currentStep > 2} />
             <StepIndicator step={3} title="Evaluation" active={currentStep === 3} completed={currentStep > 3} />
           </div>
         </div>
 
         {currentStep === 1 && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold mb-4">JSON Input</h2>
-              <textarea
-                className="w-full h-40 p-3 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter JSON format here"
-                value={jsonInput}
-                onChange={handleTextAreaChange}
-              />
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold mb-4">Input-Output Examples</h2>
-              <div className="space-y-4">
-                {inputOutputRows.map((row, index) => (
-                  <div key={index} className="flex space-x-4">
-                    <input
-                      type="text"
-                      className="flex-1 p-2 border rounded-md"
-                      placeholder="Input"
-                      value={row.input}
-                      onChange={(e) => handleInputChange(e, index, "input")}
-                    />
-                    <input
-                      type="text"
-                      className="flex-1 p-2 border rounded-md"
-                      placeholder="Output"
-                      value={row.output}
-                      onChange={(e) => handleInputChange(e, index, "output")}
-                    />
-                    <button
-                      onClick={() => deleteRow(index)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-md"
-                    >
-                      <FiTrash2 />
-                    </button>
-                  </div>
-                ))}
-                <button
-                  onClick={addRow}
-                  className="mt-2 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-md"
-                >
-                  + Add Row
-                </button>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold mb-4">Conditions</h2>
-              <textarea
-                className="w-full h-32 p-3 border rounded-md"
-                placeholder="Enter specific requirements..."
-                value={conditions}
-                onChange={(e) => setConditions(e.target.value)}
-              />
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold mb-4">Test Cases</h2>
-              <input
-                type="number"
-                min="1"
-                max="10"
-                className="w-full p-3 border rounded-md"
-                value={testCases}
-                onChange={(e) => setTestCases(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
-              />
-            </div>
-
-            {/* Add error display */}
-            {error && (
-              <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                <strong className="font-bold">Error: </strong>
-                <span className="block sm:inline">{error}</span>
-              </div>
-            )}
-
-            <div className="flex justify-end space-x-4">
-              <button
-                onClick={handleGenerate}
-                disabled={loading || !jsonInput.trim()}
-                className={`px-6 py-2 rounded-md flex items-center space-x-2 ${
-                  loading || !jsonInput.trim()
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700'
-                } text-white`}
-              >
-                {loading ? (
-                  <AiOutlineLoading3Quarters className="animate-spin mr-2" />
-                ) : null}
-                <span>Generate</span>
-              </button>
-            </div>
-          </div>
+          <Step1Input
+            jsonInput={jsonInput}
+            inputOutputRows={inputOutputRows}
+            conditions={conditions}
+            testCases={testCases}
+            loading={loading}
+            error={error}
+            onJsonInputChange={setJsonInput}
+            onInputOutputChange={handleInputChange}
+            onAddRow={addRow}
+            onDeleteRow={deleteRow}
+            onConditionsChange={setConditions}
+            onTestCasesChange={setTestCases}
+            onGenerate={handleGenerate}
+          />
         )}
 
         {currentStep === 2 && (
-          <div className="bg-white rounded-lg shadow p-6 space-y-6">
-            <h2 className="text-lg font-semibold mb-4">Generated Results</h2>
-
-            {/* Generated Prompt Section */}
-            <div className="space-y-4">
-              <h3 className="text-md font-medium">Generated Prompt</h3>
-              <div className="bg-gray-50 p-4 rounded-md">
-                <pre className="whitespace-pre-wrap font-mono text-sm">
-                  {generatedPrompt}
-                </pre>
-              </div>
-            </div>
-
-            {/* Test Cases Section */}
-            <div className="space-y-4">
-              <h3 className="text-md font-medium">Generated Test Cases</h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Input
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Expected Output
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {promptTestCases.map((testCase, index) => (
-                      <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        <td className="px-6 py-4 whitespace-pre-wrap">
-                          <code className="text-sm">{testCase.input}</code>
-                        </td>
-                        <td className="px-6 py-4 whitespace-pre-wrap">
-                          <code className="text-sm">{testCase.expected_output}</code>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            testCase.is_correct 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {testCase.is_correct ? 'Passed' : 'Pending'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Error Display */}
-            {error && (
-              <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                <strong className="font-bold">Error: </strong>
-                <span className="block sm:inline">{error}</span>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex space-x-4">
-              <button
-                onClick={handleBack}
-                disabled={loading}
-                className="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 flex items-center space-x-2"
-              >
-                Back
-              </button>
-              <button
-                onClick={handleRunPrompt}
-                disabled={loading}
-                className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center space-x-2"
-              >
-                {loading && <AiOutlineLoading3Quarters className="animate-spin mr-2" />}
-                Run Prompt
-              </button>
-            </div>
-          </div>
+          <Step2Results
+            prompt={generatedPrompt}
+            testCases={promptTestCases}
+            loading={loading}
+            error={error}
+            onBack={handleBack}
+            onRunPrompt={handleRunPrompt}
+            onPromptEdit={handlePromptEdit}
+            onTestCaseEdit={handleTestCaseEdit}
+            onTestCaseAdd={handleTestCaseAdd}
+            onTestCaseDelete={handleTestCaseDelete}
+          />
         )}
 
         {currentStep === 3 && evaluationResult && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold mb-4">Evaluation Results</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-blue-600">{evaluationResult.accuracy}%</div>
-                  <div className="text-gray-600">Accuracy</div>
-                </div>
-                <div className="mt-4 grid grid-cols-2 gap-4 text-center">
-                  <div className="p-3 bg-white rounded-lg">
-                    <div className="text-2xl font-semibold text-green-500">{evaluationResult.test_cases.filter(tc => tc.is_correct).length}</div>
-                    <div className="text-sm text-gray-600">Passed</div>
-                  </div>
-                  <div className="p-3 bg-white rounded-lg">
-                    <div className="text-2xl font-semibold text-red-500">{evaluationResult.test_cases.filter(tc => !tc.is_correct).length}</div>
-                    <div className="text-sm text-gray-600">Failed</div>
-                  </div>
-                </div>
-              </div>
-              <div className="w-full h-64">
-                <Doughnut data={chartData} options={{ maintainAspectRatio: false }} />
-              </div>
-            </div>
-            <div className="mt-6">
-              <button
-                onClick={handleBack}
-                className="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 flex items-center space-x-2"
-              >
-                Back
-              </button>
-            </div>
-          </div>
+          <Step3Evaluation
+            evaluationResult={evaluationResult}
+            onBack={handleBack}
+          />
         )}
       </div>
     </div>
