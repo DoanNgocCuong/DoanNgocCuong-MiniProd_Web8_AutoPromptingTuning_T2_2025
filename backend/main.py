@@ -90,14 +90,14 @@ async def generate_test_cases_endpoint(request: TestCaseRequest):
 @app.post("/api/generate-prompt", response_model=PromptResponse)
 async def generate_prompt_endpoint(request: PromptRequest):
     # Initial prompt generation
-    prompt = generate_prompt_from_samples(
+    generated_prompt = generate_prompt_from_samples(
         format_output=request.format,
         samples=request.samples,
         conditions=request.conditions
     )
     
     # Log the generated prompt
-    logger.info(f"API generated prompt:\n{prompt}")
+    logger.info(f"API generated prompt:\n{generated_prompt}")
     
     iteration = request.iteration
     optimization_history = []
@@ -108,7 +108,7 @@ async def generate_prompt_endpoint(request: PromptRequest):
         samples=request.samples,
         conditions=request.conditions
     )
-    accuracy, response_time = evaluate_prompt(prompt, test_cases)
+    accuracy, response_time = evaluate_prompt(generated_prompt, test_cases)
     
     # Record initial results
     optimization_history.append(
@@ -122,9 +122,9 @@ async def generate_prompt_endpoint(request: PromptRequest):
     # Iterative improvement loop
     while accuracy < 0.9 and iteration < MAX_ITERATIONS:
         iteration += 1
-        prompt = update_prompt(prompt, test_cases, accuracy)
-        test_cases = gen_test_cases(prompt)
-        accuracy, response_time = evaluate_prompt(prompt, test_cases)
+        generated_prompt = update_prompt(generated_prompt, test_cases, accuracy)
+        test_cases = gen_test_cases(generated_prompt)
+        accuracy, response_time = evaluate_prompt(generated_prompt, test_cases)
         
         optimization_history.append(
             OptimizationHistory(
@@ -135,7 +135,7 @@ async def generate_prompt_endpoint(request: PromptRequest):
         )
 
     return PromptResponse(
-        generated_prompt=prompt,
+        generated_prompt=generated_prompt,
         test_cases=test_cases,
         accuracy=accuracy,
         response_time=response_time,
@@ -161,12 +161,12 @@ async def generate_prompt_and_test_endpoint(request: PromptAndTestRequest):
         start_time = time.time()
         
         # Step 1: Generate prompt
-        prompt = generate_prompt_from_samples(
+        generated_prompt = generate_prompt_from_samples(
             format_output=request.format,
             samples=request.samples,
             conditions=request.conditions
         )
-        logger.info(f"Generated prompt:\n{prompt}")
+        logger.info(f"Generated prompt:\n{generated_prompt}")
         
         # Step 2: Generate test cases
         test_cases = gen_test_cases(
@@ -180,7 +180,7 @@ async def generate_prompt_and_test_endpoint(request: PromptAndTestRequest):
         total_time = time.time() - start_time
         
         return PromptAndTestResponse(
-            prompt=prompt,
+            generated_prompt=generated_prompt,
             test_cases=test_cases,
             total_time=total_time
         )

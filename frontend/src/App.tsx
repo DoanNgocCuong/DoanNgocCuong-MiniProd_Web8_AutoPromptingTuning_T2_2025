@@ -26,7 +26,7 @@ interface TestCase {
 }
 
 interface GenerateResponse {
-  prompt: string;
+  generated_prompt: string;
   test_cases: TestCase[];
   total_time: number;
 }
@@ -151,7 +151,7 @@ const PromptTool: React.FC = () => {
         num_test_cases: testCases
       });
 
-      setGeneratedPrompt(response.prompt);
+      setGeneratedPrompt(response.generated_prompt);
       setPromptTestCases(response.test_cases);
       setCurrentStep(2);
     } catch (err) {
@@ -270,7 +270,7 @@ const PromptTool: React.FC = () => {
 
         {currentStep === 2 && (
           <Step2Results
-            prompt={generatedPrompt}
+            generated_prompt={generatedPrompt}
             testCases={promptTestCases}
             loading={loading}
             error={error}

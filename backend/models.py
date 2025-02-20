@@ -53,7 +53,7 @@ class PromptAndTestRequest(BaseModel):
     num_test_cases: int = 5
 
 class PromptAndTestResponse(BaseModel):
-    prompt: str
+    generated_prompt: str
     test_cases: List[PromptTestCase]
     total_time: float
 

@@ -12,7 +12,7 @@ export interface TestCase {
 }
 
 export interface GenerateResponse {
-  prompt: string;
+  generated_prompt: string;
   test_cases: TestCase[];
   total_time: number;
 }

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TestCase } from '../types';
 
 interface Step2Props {
-  prompt: string;
+  generated_prompt: string;
   testCases: TestCase[];
   loading: boolean;
   error: string | null;
@@ -15,7 +15,7 @@ interface Step2Props {
 }
 
 export const Step2Results: React.FC<Step2Props> = ({
-  prompt,
+  generated_prompt,
   testCases,
   loading,
   error,
@@ -27,13 +27,13 @@ export const Step2Results: React.FC<Step2Props> = ({
   onTestCaseDelete
 }) => {
   const [isEditingPrompt, setIsEditingPrompt] = useState(false);
-  const [editedPrompt, setEditedPrompt] = useState(prompt);
+  const [editedPrompt, setEditedPrompt] = useState(generated_prompt);
 
   // Move console logs to useEffect
   useEffect(() => {
-    console.log('Current prompt value:', prompt);
+    console.log('Current prompt value:', generated_prompt);
     console.log('Current editedPrompt value:', editedPrompt);
-  }, [prompt, editedPrompt]);
+  }, [generated_prompt, editedPrompt]);
 
   const handlePromptSave = () => {
     console.log('Saving new prompt:', editedPrompt);
@@ -79,7 +79,7 @@ export const Step2Results: React.FC<Step2Props> = ({
         ) : (
           <div className="bg-gray-50 p-4 rounded-md">
             <pre className="whitespace-pre-wrap font-mono text-sm">
-              {prompt}
+              {generated_prompt}
             </pre>
           </div>
         )}
