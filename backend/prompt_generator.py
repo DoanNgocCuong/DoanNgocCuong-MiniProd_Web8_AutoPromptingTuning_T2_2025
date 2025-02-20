@@ -43,7 +43,7 @@ def call_openai_api(client, messages, max_retries=3):
             logger.warning(f"Attempt {try_count} failed: {str(e)}. Retrying in {try_count} seconds...")
             time.sleep(try_count)
 
-def generate_prompt(format_output: str, samples: List[Sample], conditions: str) -> str:
+def generate_prompt(format_output: str, samples: List[Sample], conditions: str, num_testcases: int = 1) -> str:
     """Generate a prompt using OpenAI API"""
     try:
         # Validate API key first
@@ -58,7 +58,7 @@ def generate_prompt(format_output: str, samples: List[Sample], conditions: str) 
             for s in samples
         ])
         
-        # Construct user message
+        # Construct user message with num_testcases
         user_message = f"""
 1. ĐIỀU KIỆN:
 {conditions}
@@ -68,6 +68,8 @@ def generate_prompt(format_output: str, samples: List[Sample], conditions: str) 
 
 3. RESPONSE FORMAT:
 {format_output}
+
+4. NUMBER OF TEST CASES REQUIRED: {num_testcases}
 """
         
         # Prepare messages

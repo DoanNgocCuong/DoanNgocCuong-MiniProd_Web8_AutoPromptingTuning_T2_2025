@@ -27,7 +27,70 @@ backend/
 ---
 
 
-## 2. Tài liệu API
+## 2. Tài liệu API - http://103.253.20.13:25043/docs#/
+
+
+### 2.1 POST
+/api/generate-prompt-and-testcases
+Generate Prompt And Test Endpoint
+```bash
+curl -X 'POST' \
+  'http://103.253.20.13:25043/api/generate-prompt-and-testcases' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "format": "string",
+  "samples": [
+    {
+      "input": "string",
+      "output": "string"
+    }
+  ],
+  "conditions": "string",
+  "num_test_cases": 5
+}'
+```
+
+Response
+```bash
+{
+  "prompt": "**Prompt:**\n\nYou are a string manipulation expert. Given a string as input, perform the following operations to produce the output:\n\n1. Convert the entire string to uppercase.\n2. Reverse the string.\n3. Replace all vowels (a, e, i, o, u) with the asterisk symbol (*).\n\n**You are trained on data up to October 2023.**\n\n**Sample Input-Output:**\n\n- Input: \"hello world\"\n- Output: \"DL*RW *L*H\"\n\n**Response Format:**\n- Output: string\n\n**Number of Test Cases Required: 1** \n\n---\n\nFeel free to provide the input string for processing!",
+  "test_cases": [
+    {
+      "input": "\"Hello, world!\"",
+      "expected_output": "\"Hello, world!\"",
+      "prompt_output": "",
+      "is_correct": false,
+      "similarity_score": 0.7
+    },
+    {
+      "input": "\"12345\"",
+      "expected_output": "\"12345\"",
+      "prompt_output": "",
+      "is_correct": false,
+      "similarity_score": 0.7
+    },
+    {
+      "input": "\"   \"",
+      "expected_output": "\"Error",
+      "prompt_output": "",
+      "is_correct": false,
+      "similarity_score": 0.7
+    },
+    {
+      "input": "\"A very long string that exceeds the maximum allowed length of characters in this prompt.\"",
+      "expected_output": "\"Error",
+      "prompt_output": "",
+      "is_correct": false,
+      "similarity_score": 0.7
+    }
+  ],
+  "total_time": 4.439431667327881
+}
+```
+
+
+
 
 ### 2.1. Run Prompt API
 ```http
