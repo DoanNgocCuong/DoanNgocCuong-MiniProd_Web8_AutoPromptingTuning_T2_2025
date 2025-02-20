@@ -198,18 +198,10 @@ async def run_prompt_endpoint(request: RunPromptRequest):
     try:
         start_time = time.time()
         
-        # Generate prompt with test cases
-        generated_prompt = generate_prompt(
-            format_output=request.prompt,
-            samples=[Sample(**example) for example in request.examples],
-            conditions=request.conditions,
-            num_testcases=request.test_cases  # Pass the number of test cases
-        )
-        
-        # Run prompt with test cases
+        # Run prompt với test cases đã có
         test_cases = test_runner.run_with_testcases(
-            prompt=generated_prompt,
-            test_cases=request.test_cases  # Pass number of test cases to runner
+            prompt=request.prompt,  # Sử dụng prompt trực tiếp từ request
+            test_cases=request.test_cases  # Sử dụng test cases từ request
         )
         
         total_time = time.time() - start_time
