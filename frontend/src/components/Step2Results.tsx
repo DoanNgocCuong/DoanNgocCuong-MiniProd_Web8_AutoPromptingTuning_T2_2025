@@ -262,10 +262,9 @@ export const Step2Results: React.FC<Step2Props> = ({
     <div className="min-w-[1200px] min-h-screen bg-gray-50 p-6">
       <ToastContainer />
       
-      <div className="bg-white rounded-lg shadow p-6 space-y-6">
+      {/* Prompt Section */}
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4">Generated Results</h2>
-
-        {/* Prompt Section */}
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-md font-medium">Generated Prompt</h3>
@@ -304,198 +303,191 @@ export const Step2Results: React.FC<Step2Props> = ({
             </div>
           )}
         </div>
+      </div>
 
-        {/* Upload & Actions Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <input
-                ref={fileInputRef}
-                type="file"
-                onChange={handleExcelUpload}
-                className="hidden"
-                accept=".xlsx,.xls"
-              />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                <FiUpload className="mr-2" />
-                Upload Excel
-              </button>
-              <button
-                onClick={downloadTemplate}
-                className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-              >
-                <FiDownload className="mr-2" />
-                Download Template
-              </button>
-              <button
-                onClick={downloadCurrentTestCases}
-                className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-              >
-                <FiDownload className="mr-2" />
-                Export Results
-              </button>
-            </div>
-
-            <div className="flex space-x-4">
-              <button
-                onClick={onRunPrompt}
-                disabled={loading || isProcessing}
-                className={`px-4 py-2 rounded-md ${
-                  loading || isProcessing ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
-                } text-white flex items-center`}
-              >
-                {loading ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <FiPlay className="mr-2" />
-                    Run Prompt
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {isProcessing && (
-            <div className="mt-6">
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div
-                  className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                ></div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Test Cases Section with improved table styling */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6 overflow-x-auto">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center space-x-4">
-              <h3 className="text-md font-medium">Generated Test Cases</h3>
-            </div>
+      {/* Upload & Actions Section */}
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleExcelUpload}
+              className="hidden"
+              accept=".xlsx,.xls"
+            />
             <button
-              onClick={onTestCaseAdd}
-              className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-md flex items-center"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
-              + Add Test Case
+              <FiUpload className="mr-2" />
+              Upload Excel
+            </button>
+            <button
+              onClick={downloadTemplate}
+              className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+            >
+              <FiDownload className="mr-2" />
+              Download Template
+            </button>
+            <button
+              onClick={downloadCurrentTestCases}
+              className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            >
+              <FiDownload className="mr-2" />
+              Export Results
             </button>
           </div>
 
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Model</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User Input</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expected Output</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Output Prompt</th>
-                <th className="w-10"></th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {testCases.map((testCase, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <select
-                      className="w-full p-2 border rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
-                      value={testCase.model || "GPT-4"}
-                      onChange={(e) => onTestCaseEdit(index, { ...testCase, model: e.target.value })}
-                    >
-                      <option value="GPT-4">GPT-4</option>
-                      <option value="GPT-3">GPT-3</option>
-                    </select>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div style={cellStyles}>
-                      <textarea
-                        className="w-full p-2 border rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 resize-y"
-                        value={testCase.input}
-                        onChange={(e) => onTestCaseEdit(index, { ...testCase, input: e.target.value })}
-                        placeholder="Enter user input"
-                      />
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div style={cellStyles}>
-                      <textarea
-                        className="w-full p-2 border rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 resize-y"
-                        value={testCase.expected_output}
-                        onChange={(e) => onTestCaseEdit(index, { ...testCase, expected_output: e.target.value })}
-                        placeholder="Enter expected output"
-                      />
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 bg-blue-50 border-l-4 border-blue-400">
-                    <div style={cellStyles}>
-                      {testCase.prompt_output && (
-                        <ExpandableCell 
-                          content={getPromptOutput(testCase)}
-                          className="bg-white rounded p-2 shadow-sm"
-                        />
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-2 py-4 text-center">
-                    <button
-                      onClick={() => onTestCaseDelete(index)}
-                      className="text-gray-400 hover:text-red-600 transition-colors duration-200"
-                      title="Delete test case"
-                    >
-                      <FiTrash2 className="w-5 h-5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="flex space-x-4">
+            <button
+              onClick={onRunPrompt}
+              disabled={loading || isProcessing}
+              className={`px-4 py-2 rounded-md ${
+                loading || isProcessing ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
+              } text-white flex items-center`}
+            >
+              {loading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <FiPlay className="mr-2" />
+                  Run Prompt
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-            <strong className="font-bold">Error: </strong>
-            <span className="block sm:inline">{error}</span>
+        {isProcessing && (
+          <div className="mt-6">
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div
+                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
           </div>
         )}
+      </div>
 
-        {/* Logs Section */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold mb-4">Processing Logs</h3>
-          <div className="h-[200px] overflow-auto bg-gray-50 p-4 rounded">
-            {logs.map((log, index) => (
-              <div
-                key={index}
-                className={`mb-2 ${
-                  log.type === "success" ? "text-green-600" : 
-                  log.type === "warning" ? "text-yellow-600" : "text-red-600"
-                }`}
-              >
-                <span className="text-gray-500">
-                  [{new Date(log.timestamp).toLocaleTimeString()}]
-                </span>
-                {" "}{log.message}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex justify-between mt-6">
+      {/* Test Cases Section - Simplified structure */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold">Generated Test Cases</h3>
           <button
-            onClick={onBack}
-            className="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+            onClick={onTestCaseAdd}
+            className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-md flex items-center"
           >
-            Back
+            + Add Test Case
           </button>
         </div>
+
+        <table className="min-w-full">
+          <thead>
+            <tr className="bg-gray-50">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Model</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User Input</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expected Output</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Output Prompt</th>
+              <th className="w-10"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {testCases.map((testCase, index) => (
+              <tr key={index} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <select
+                    className="w-full p-2 border rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+                    value={testCase.model || "GPT-4"}
+                    onChange={(e) => onTestCaseEdit(index, { ...testCase, model: e.target.value })}
+                  >
+                    <option value="GPT-4">GPT-4</option>
+                    <option value="GPT-3">GPT-3</option>
+                  </select>
+                </td>
+                <td className="px-6 py-4">
+                  <textarea
+                    className="w-full p-2 border rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 resize-y"
+                    value={testCase.input}
+                    onChange={(e) => onTestCaseEdit(index, { ...testCase, input: e.target.value })}
+                    placeholder="Enter user input"
+                  />
+                </td>
+                <td className="px-6 py-4">
+                  <textarea
+                    className="w-full p-2 border rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 resize-y"
+                    value={testCase.expected_output}
+                    onChange={(e) => onTestCaseEdit(index, { ...testCase, expected_output: e.target.value })}
+                    placeholder="Enter expected output"
+                  />
+                </td>
+                <td className="px-6 py-4 bg-blue-50 border-l-4 border-blue-400">
+                  {testCase.prompt_output && (
+                    <ExpandableCell 
+                      content={getPromptOutput(testCase)}
+                      className="bg-white rounded p-2 shadow-sm"
+                    />
+                  )}
+                </td>
+                <td className="px-2 py-4 text-center">
+                  <button
+                    onClick={() => onTestCaseDelete(index)}
+                    className="text-gray-400 hover:text-red-600 transition-colors duration-200"
+                    title="Delete test case"
+                  >
+                    <FiTrash2 className="w-5 h-5" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Error Section */}
+      {error && (
+        <div className="mt-6 bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+          <strong className="font-bold">Error: </strong>
+          <span className="block sm:inline">{error}</span>
+        </div>
+      )}
+
+      {/* Logs Section */}
+      <div className="mt-6 bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold mb-4">Processing Logs</h3>
+        <div className="h-[200px] overflow-auto bg-gray-50 p-4 rounded">
+          {logs.map((log, index) => (
+            <div
+              key={index}
+              className={`mb-2 ${
+                log.type === "success" ? "text-green-600" : 
+                log.type === "warning" ? "text-yellow-600" : "text-red-600"
+              }`}
+            >
+              <span className="text-gray-500">
+                [{new Date(log.timestamp).toLocaleTimeString()}]
+              </span>
+              {" "}{log.message}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex justify-between mt-6">
+        <button
+          onClick={onBack}
+          className="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+        >
+          Back
+        </button>
       </div>
     </div>
   );
