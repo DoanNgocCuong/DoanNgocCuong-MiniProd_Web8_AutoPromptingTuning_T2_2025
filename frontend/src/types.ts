@@ -15,6 +15,9 @@ export interface TestCase {
   prompt_output: PromptOutput | string;
   is_correct: boolean;
   similarity_score: number;
+  model?: string;
+  system_prompt?: string;
+  conversation_history?: string;
 }
 
 export interface GenerateResponse {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TestCase, PromptOutput } from '../types';
+import { FiUpload, FiPlay, FiSquare, FiAlertCircle } from "react-icons/fi";
 
 interface Step2Props {
   generated_prompt: string;
@@ -121,8 +122,8 @@ export const Step2Results: React.FC<Step2Props> = ({
       </div>
 
       {/* Test Cases Section */}
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6 overflow-x-auto">
+        <div className="flex justify-between items-center mb-4">
           <h3 className="text-md font-medium">Generated Test Cases</h3>
           <button
             onClick={onTestCaseAdd}
@@ -131,50 +132,79 @@ export const Step2Results: React.FC<Step2Props> = ({
             + Add Test Case
           </button>
         </div>
-        <div className="space-y-4">
-          {testCases.map((testCase, index) => (
-            <div key={index} className="bg-gray-50 p-4 rounded-lg">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Input</h4>
+
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Model</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">System Prompt</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Conversation History</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User Input</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Output Prompt</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {testCases.map((testCase, index) => (
+              <tr key={index}>
+                <td className="px-6 py-4 whitespace-nowrap">{index + 1}</td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <select
+                    className="w-full p-2 border rounded-md"
+                    value={testCase.model || "GPT-4"}
+                    onChange={(e) => onTestCaseEdit(index, { ...testCase, model: e.target.value })}
+                  >
+                    <option value="GPT-4">GPT-4</option>
+                    <option value="GPT-3">GPT-3</option>
+                  </select>
+                </td>
+                <td className="px-6 py-4">
                   <input
                     type="text"
-                    className="mt-1 w-full p-2 border rounded-md"
+                    className="w-full p-2 border rounded-md"
+                    value={testCase.system_prompt || ""}
+                    onChange={(e) => onTestCaseEdit(index, { ...testCase, system_prompt: e.target.value })}
+                    placeholder="Enter system prompt"
+                  />
+                </td>
+                <td className="px-6 py-4">
+                  <textarea
+                    className="w-full p-2 border rounded-md"
+                    value={testCase.conversation_history || ""}
+                    onChange={(e) => onTestCaseEdit(index, { ...testCase, conversation_history: e.target.value })}
+                    placeholder="Enter conversation history"
+                    rows={2}
+                  />
+                </td>
+                <td className="px-6 py-4">
+                  <input
+                    type="text"
+                    className="w-full p-2 border rounded-md"
                     value={testCase.input}
                     onChange={(e) => onTestCaseEdit(index, { ...testCase, input: e.target.value })}
+                    placeholder="Enter user input"
                   />
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Expected Output</h4>
-                  <input
-                    type="text"
-                    className="mt-1 w-full p-2 border rounded-md"
-                    value={testCase.expected_output}
-                    onChange={(e) => onTestCaseEdit(index, { ...testCase, expected_output: e.target.value })}
-                  />
-                </div>
-                {testCase.prompt_output && (
-                  <div className="col-span-2">
-                    <h4 className="text-sm font-medium text-gray-500">Prompt Output</h4>
-                    <div className="mt-1 p-2 bg-gray-100 rounded-md">
-                      <pre className="whitespace-pre-wrap text-sm">
-                        {getPromptOutput(testCase)}
-                      </pre>
-                    </div>
-                  </div>
-                )}
-                <div className="col-span-2 flex justify-end">
+                </td>
+                <td className="px-6 py-4 bg-blue-50 border-l-4 border-blue-400">
+                  {testCase.prompt_output && (
+                    <pre className="whitespace-pre-wrap text-sm">
+                      {getPromptOutput(testCase)}
+                    </pre>
+                  )}
+                </td>
+                <td className="px-6 py-4">
                   <button
                     onClick={() => onTestCaseDelete(index)}
                     className="text-red-600 hover:text-red-700"
                   >
                     Delete
                   </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {error && (
@@ -197,7 +227,7 @@ export const Step2Results: React.FC<Step2Props> = ({
           disabled={loading}
           className={`px-6 py-2 rounded-md ${
             loading ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
-          } text-white flex items-center`}
+          } text-white flex items-center space-x-2`}
         >
           {loading ? (
             <>
@@ -208,7 +238,10 @@ export const Step2Results: React.FC<Step2Props> = ({
               Processing...
             </>
           ) : (
-            'Run Prompt'
+            <>
+              <FiPlay className="w-5 h-5" />
+              <span>Run Prompt</span>
+            </>
           )}
         </button>
       </div>
