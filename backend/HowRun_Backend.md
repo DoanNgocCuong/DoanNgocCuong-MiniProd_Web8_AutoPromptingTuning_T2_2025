@@ -1,5 +1,5 @@
 ```bash
-./deploy.sh --port 25043
+./deploy_backend.sh --port 25043
 ```
 
 Check log: 

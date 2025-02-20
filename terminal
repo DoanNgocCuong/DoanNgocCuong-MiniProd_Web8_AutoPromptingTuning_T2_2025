@@ -1,2 +1,0 @@
-mkdir -p auto-prompting/{backend,frontend}
-cd auto-prompting 
