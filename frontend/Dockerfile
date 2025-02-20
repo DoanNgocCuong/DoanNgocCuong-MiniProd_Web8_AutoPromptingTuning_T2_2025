@@ -12,8 +12,11 @@ RUN npm install
 # Create a .env file with the port configuration
 RUN echo "PORT=25044" > .env
 
-# Copy source files
+# Copy source files including assets
 COPY . .
+
+# Ensure assets directory exists
+RUN mkdir -p src/assets
 
 # Type check and build the application
 RUN npm run build
