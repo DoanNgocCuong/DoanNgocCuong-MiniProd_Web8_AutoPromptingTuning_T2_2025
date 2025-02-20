@@ -17,16 +17,19 @@ Step 1:
 -> Ouput trả ra là prompt và test cases
 
 
-Step 1': User được chỉnh sửa Prompt và Test Cases (CRUD) 
+Output step 1: User được chỉnh sửa Prompt và Test Cases (CRUD) 
 
 
 Step 2: 
 - User nhấn nút: Run Prompt (call đến API: /api/run-prompt)
 
+Output step 2: 
+
 Step 3: 
 - User nhấn nút: Evaluate Results (call đến API: /api/evaluate-results)
 -> Ouput trả ra là kết quả đánh giá
 
+Output step 3: 
 
 Note: 
 - Sample Input Output là dạng 2 cột, 3 5 dòng Input Output samples

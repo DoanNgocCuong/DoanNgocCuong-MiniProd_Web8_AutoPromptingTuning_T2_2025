@@ -7,16 +7,35 @@ import { Doughnut } from "react-chartjs-2";
 // Register ChartJS components
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-// Types
+// Types and Interfaces
 interface InputOutputRow {
   input: string;
   output: string;
 }
 
+interface TestCase {
+  input: string;
+  expected_output: string;
+  prompt_output: string;
+  is_correct: boolean;
+  similarity_score: number;
+}
+
+interface GenerateResponse {
+  prompt: string;
+  test_cases: TestCase[];
+  total_time: number;
+}
+
+interface RunPromptResponse {
+  test_cases: TestCase[];
+  total_time: number;
+}
+
 interface EvaluationResult {
-  successRate: number;
-  passed: number;
-  failed: number;
+  accuracy: number;
+  avg_similarity: number;
+  test_cases: TestCase[];
 }
 
 interface ApiResponse<T> {
@@ -24,49 +43,37 @@ interface ApiResponse<T> {
   error?: string;
 }
 
-// Add this interface for API responses
-interface GenerateResponse {
-  success: boolean;
-  data: any;
-  message?: string;
+// Add interface for request data
+interface PromptRequest {
+  prompt: string;
+  examples: Array<{
+    input: string;
+    output: string;
+  }>;
+  conditions: string;
+  test_cases: number;
 }
 
 // API Service
 const API_BASE_URL = 'http://103.253.20.13:25043/api';
 
 const apiService = {
-  async post<T>(endpoint: string, data: any): Promise<ApiResponse<T>> {
-    try {
-      console.log('Sending request to:', `${API_BASE_URL}${endpoint}`);
-      console.log('Request data:', data);
-      
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(data),
-      });
+  async post<T>(endpoint: string, data: any): Promise<T> {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
 
-      console.log('Response status:', response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ 
-          message: `HTTP error! status: ${response.status}` 
-        }));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      console.log('Response data:', result);
-      return { data: result };
-    } catch (error) {
-      console.error(`API Error (${endpoint}):`, error);
-      return { 
-        error: error instanceof Error ? error.message : 'An unexpected error occurred' 
-      };
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'API request failed');
     }
+
+    return response.json();
   }
 };
 
@@ -99,8 +106,9 @@ const PromptTool: React.FC = () => {
   const [testCases, setTestCases] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [results, setResults] = useState<any>(null);
-  const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
+  const [generatedPrompt, setGeneratedPrompt] = useState<string>("");
+  const [promptTestCases, setPromptTestCases] = useState<TestCase[]>([]);
+  const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
 
   // Handlers
   const handleTextAreaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -122,64 +130,62 @@ const PromptTool: React.FC = () => {
     }
   };
 
+  // Step 1: Generate Prompt and Test Cases
   const handleGenerate = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // Validate inputs
-      if (!jsonInput.trim()) {
-        throw new Error('JSON input is required');
-      }
-
-      // Validate input-output examples
-      if (!inputOutputRows.some(row => row.input && row.output)) {
-        throw new Error('At least one complete input-output example is required');
-      }
-
-      const response = await apiService.post<GenerateResponse>('/run-prompt', {
-        jsonInput,
-        inputOutputRows: inputOutputRows.filter(row => row.input && row.output),
-        conditions,
-        testCases
+      const response = await apiService.post<GenerateResponse>('/generate-prompt-and-testcases', {
+        format: jsonInput.trim(),
+        samples: inputOutputRows.filter(row => row.input && row.output),
+        conditions: conditions.trim(),
+        num_test_cases: testCases
       });
 
-      if (response.error) {
-        throw new Error(response.error);
-      }
-
-      if (!response.data) {
-        throw new Error('No data received from server');
-      }
-
-      setResults(response.data);
+      setGeneratedPrompt(response.prompt);
+      setPromptTestCases(response.test_cases);
       setCurrentStep(2);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Generation failed');
-      // Keep the user on the current step when there's an error
+      setError(err instanceof Error ? err.message : 'Failed to generate prompt');
     } finally {
       setLoading(false);
     }
   };
 
+  // Step 2: Run Prompt
+  const handleRunPrompt = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await apiService.post<RunPromptResponse>('/run-prompt', {
+        prompt: generatedPrompt,
+        test_cases: promptTestCases
+      });
+
+      setPromptTestCases(response.test_cases);
+      setCurrentStep(3);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to run prompt');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 3: Evaluate Results
   const handleEvaluate = async () => {
     setLoading(true);
     setError(null);
 
     try {
       const response = await apiService.post<EvaluationResult>('/evaluate-results', {
-        results,
-        inputOutputRows
+        test_cases: promptTestCases
       });
 
-      if (response.error) {
-        throw new Error(response.error);
-      }
-
-      setEvaluation(response.data || null);
-      setCurrentStep(3);
+      setEvaluationResult(response);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Evaluation failed');
+      setError(err instanceof Error ? err.message : 'Failed to evaluate results');
     } finally {
       setLoading(false);
     }
@@ -191,11 +197,11 @@ const PromptTool: React.FC = () => {
   const chartData = useMemo(() => ({
     labels: ["Passed", "Failed"],
     datasets: [{
-      data: evaluation ? [evaluation.passed, evaluation.failed] : [0, 0],
+      data: evaluationResult ? [evaluationResult.test_cases.filter(tc => tc.is_correct).length, evaluationResult.test_cases.filter(tc => !tc.is_correct).length] : [0, 0],
       backgroundColor: ["#4ade80", "#f87171"],
       borderWidth: 0
     }]
-  }), [evaluation]);
+  }), [evaluationResult]);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -266,6 +272,18 @@ const PromptTool: React.FC = () => {
               />
             </div>
 
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold mb-4">Test Cases</h2>
+              <input
+                type="number"
+                min="1"
+                max="10"
+                className="w-full p-3 border rounded-md"
+                value={testCases}
+                onChange={(e) => setTestCases(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
+              />
+            </div>
+
             {/* Add error display */}
             {error && (
               <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
@@ -294,8 +312,71 @@ const PromptTool: React.FC = () => {
         )}
 
         {currentStep === 2 && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold mb-4">Execution</h2>
+          <div className="bg-white rounded-lg shadow p-6 space-y-6">
+            <h2 className="text-lg font-semibold mb-4">Generated Results</h2>
+
+            {/* Generated Prompt Section */}
+            <div className="space-y-4">
+              <h3 className="text-md font-medium">Generated Prompt</h3>
+              <div className="bg-gray-50 p-4 rounded-md">
+                <pre className="whitespace-pre-wrap font-mono text-sm">
+                  {generatedPrompt}
+                </pre>
+              </div>
+            </div>
+
+            {/* Test Cases Section */}
+            <div className="space-y-4">
+              <h3 className="text-md font-medium">Generated Test Cases</h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Input
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Expected Output
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {promptTestCases.map((testCase, index) => (
+                      <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="px-6 py-4 whitespace-pre-wrap">
+                          <code className="text-sm">{testCase.input}</code>
+                        </td>
+                        <td className="px-6 py-4 whitespace-pre-wrap">
+                          <code className="text-sm">{testCase.expected_output}</code>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            testCase.is_correct 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {testCase.is_correct ? 'Passed' : 'Pending'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Error Display */}
+            {error && (
+              <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                <strong className="font-bold">Error: </strong>
+                <span className="block sm:inline">{error}</span>
+              </div>
+            )}
+
+            {/* Action Buttons */}
             <div className="flex space-x-4">
               <button
                 onClick={handleBack}
@@ -305,33 +386,33 @@ const PromptTool: React.FC = () => {
                 Back
               </button>
               <button
-                onClick={handleEvaluate}
+                onClick={handleRunPrompt}
                 disabled={loading}
                 className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center space-x-2"
               >
                 {loading && <AiOutlineLoading3Quarters className="animate-spin mr-2" />}
-                Evaluate Results
+                Run Prompt
               </button>
             </div>
           </div>
         )}
 
-        {currentStep === 3 && evaluation && (
+        {currentStep === 3 && evaluationResult && (
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold mb-4">Evaluation Results</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="p-4 bg-gray-50 rounded-lg">
                 <div className="text-center">
-                  <div className="text-4xl font-bold text-blue-600">{evaluation.successRate}%</div>
-                  <div className="text-gray-600">Success Rate</div>
+                  <div className="text-4xl font-bold text-blue-600">{evaluationResult.accuracy}%</div>
+                  <div className="text-gray-600">Accuracy</div>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-4 text-center">
                   <div className="p-3 bg-white rounded-lg">
-                    <div className="text-2xl font-semibold text-green-500">{evaluation.passed}</div>
+                    <div className="text-2xl font-semibold text-green-500">{evaluationResult.test_cases.filter(tc => tc.is_correct).length}</div>
                     <div className="text-sm text-gray-600">Passed</div>
                   </div>
                   <div className="p-3 bg-white rounded-lg">
-                    <div className="text-2xl font-semibold text-red-500">{evaluation.failed}</div>
+                    <div className="text-2xl font-semibold text-red-500">{evaluationResult.test_cases.filter(tc => !tc.is_correct).length}</div>
                     <div className="text-sm text-gray-600">Failed</div>
                   </div>
                 </div>
