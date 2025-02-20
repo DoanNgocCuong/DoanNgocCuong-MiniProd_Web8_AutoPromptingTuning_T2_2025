@@ -18,6 +18,7 @@ interface Step2Props {
   onTestCaseDelete: (index: number) => void;
   setError: (error: string | null) => void;
   onTestCasesReplace: (testCases: TestCase[]) => void;
+  inputOutputRows: PromptOutput[];
 }
 
 const getPromptOutput = (testCase: TestCase): string => {
@@ -98,7 +99,8 @@ export const Step2Results: React.FC<Step2Props> = ({
   onTestCaseAdd,
   onTestCaseDelete,
   setError,
-  onTestCasesReplace
+  onTestCasesReplace,
+  inputOutputRows
 }) => {
   const [isEditingPrompt, setIsEditingPrompt] = useState(false);
   const [editedPrompt, setEditedPrompt] = useState(generated_prompt);
@@ -401,7 +403,12 @@ export const Step2Results: React.FC<Step2Props> = ({
           </thead>
           <tbody className="divide-y divide-gray-200">
             {testCases.map((testCase, index) => (
-              <tr key={index} className="hover:bg-gray-50">
+              <tr 
+                key={index} 
+                className={`hover:bg-gray-50 ${
+                  index < inputOutputRows.length ? 'bg-yellow-50' : ''
+                }`}
+              >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <select
                     className="w-full p-2 border rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"

@@ -153,42 +153,51 @@ const PromptTool: React.FC = () => {
   // Chuyển sang Step 2
   const handleNext = () => {
     setCurrentStep(2);
-  };
+    
+    // Thêm input-output examples vào test cases
+    const exampleTestCases: TestCase[] = inputOutputRows.map(row => ({
+      model: 'GPT-4', // default model
+      input: row.input,
+      expected_output: row.output,
+      prompt_output: '',
+      is_correct: false,
+      similarity_score: 0,
+      system_prompt: '',
+      conversation_history: ''
+    }));
 
-  // Generate được gọi khi vào Step 2
-  useEffect(() => {
+    // Khi API trả về response, thêm example test cases vào
     const generatePrompt = async () => {
-      if (currentStep === 2) {
-        setLoading(true);
-        setError(null);
+      setLoading(true);
+      setError(null);
 
-        try {
-          const response = await apiService.post<GenerateResponse>('/generate-prompt-and-testcases', {
-            format: jsonInput.trim(),
-            samples: inputOutputRows.filter(row => row.input && row.output),
-            conditions: conditions.trim(),
-            num_test_cases: testCases
-          });
+      try {
+        const response = await apiService.post<GenerateResponse>('/generate-prompt-and-testcases', {
+          format: jsonInput.trim(),
+          samples: inputOutputRows.filter(row => row.input && row.output),
+          conditions: conditions.trim(),
+          num_test_cases: testCases
+        });
 
-          if (!response.generated_prompt || !response.test_cases?.length) {
-            throw new Error('Invalid or empty response from server');
-          }
-
-          setGeneratedPrompt(response.generated_prompt);
-          setPromptTestCases(response.test_cases);
-
-        } catch (err) {
-          console.error('Generate error:', err);
-          setError(err instanceof Error ? err.message : 'Failed to generate prompt');
-          setCurrentStep(1); // Quay lại Step 1 nếu có lỗi
-        } finally {
-          setLoading(false);
+        if (!response.generated_prompt || !response.test_cases?.length) {
+          throw new Error('Invalid or empty response from server');
         }
+
+        setGeneratedPrompt(response.generated_prompt);
+        // Combine example test cases with generated test cases
+        setPromptTestCases([...exampleTestCases, ...response.test_cases]);
+
+      } catch (err) {
+        console.error('Generate error:', err);
+        setError(err instanceof Error ? err.message : 'Failed to generate prompt');
+        setCurrentStep(1); // Quay lại Step 1 nếu có lỗi
+      } finally {
+        setLoading(false);
       }
     };
 
     generatePrompt();
-  }, [currentStep]);
+  };
 
   // Step 2: Run Prompt
   const handleRunPrompt = async () => {
