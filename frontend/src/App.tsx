@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { FiChevronRight, FiTrash2, FiCheck } from "react-icons/fi";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
@@ -96,6 +96,32 @@ const PromptTool: React.FC = () => {
   const [promptTestCases, setPromptTestCases] = useState<TestCase[]>([]);
   const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
 
+  // Monitor state changes
+  useEffect(() => {
+    console.log('State updated:', {
+      currentStep,
+      generatedPrompt,
+      promptTestCases
+    });
+  }, [currentStep, generatedPrompt, promptTestCases]);
+
+  // Reset states when needed
+  const resetStates = () => {
+    setGeneratedPrompt('');
+    setPromptTestCases([]);
+    setError(null);
+  };
+
+  // Use in handleBack if needed
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+      if (currentStep === 2) {
+        resetStates();
+      }
+    }
+  };
+
   // Handlers
   const handleTextAreaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setJsonInput(e.target.value);
@@ -116,43 +142,83 @@ const PromptTool: React.FC = () => {
     }
   };
 
-  // Step 1: Generate Prompt and Test Cases
-  const handleGenerate = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await apiService.post<GenerateResponse>('/generate-prompt-and-testcases', {
-        format: jsonInput.trim(),
-        samples: inputOutputRows.filter(row => row.input && row.output),
-        conditions: conditions.trim(),
-        num_test_cases: testCases
-      });
-
-      setGeneratedPrompt(response.generated_prompt);
-      setPromptTestCases(response.test_cases);
-      setCurrentStep(2);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate prompt');
-    } finally {
-      setLoading(false);
-    }
+  // Chuyển sang Step 2
+  const handleNext = () => {
+    setCurrentStep(2);
   };
 
-  // Step 2: Run Prompt (không tự động chuyển sang step 3)
+  // Generate được gọi khi vào Step 2
+  useEffect(() => {
+    const generatePrompt = async () => {
+      if (currentStep === 2) {
+        setLoading(true);
+        setError(null);
+
+        try {
+          const response = await apiService.post<GenerateResponse>('/generate-prompt-and-testcases', {
+            format: jsonInput.trim(),
+            samples: inputOutputRows.filter(row => row.input && row.output),
+            conditions: conditions.trim(),
+            num_test_cases: testCases
+          });
+
+          if (!response.generated_prompt || !response.test_cases?.length) {
+            throw new Error('Invalid or empty response from server');
+          }
+
+          setGeneratedPrompt(response.generated_prompt);
+          setPromptTestCases(response.test_cases);
+
+        } catch (err) {
+          console.error('Generate error:', err);
+          setError(err instanceof Error ? err.message : 'Failed to generate prompt');
+          setCurrentStep(1); // Quay lại Step 1 nếu có lỗi
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    generatePrompt();
+  }, [currentStep]);
+
+  // Step 2: Run Prompt
   const handleRunPrompt = async () => {
     setLoading(true);
     setError(null);
 
     try {
+      console.log('Running prompt with:', {
+        prompt: generatedPrompt,
+        test_cases: promptTestCases
+      });
+
       const response = await apiService.post<RunPromptResponse>('/run-prompt', {
         prompt: generatedPrompt,
         test_cases: promptTestCases
       });
 
+      // Kiểm tra response
+      if (!response.test_cases?.length) {
+        throw new Error('No test cases in response');
+      }
+
+      // Chỉ cập nhật test cases, không chuyển step
       setPromptTestCases(response.test_cases);
-      setCurrentStep(3);
+
+      // Pre-fetch evaluation result nhưng không hiển thị
+      const evalResponse = await apiService.post<EvaluationResult>('/evaluate-results', {
+        test_cases: response.test_cases
+      });
+
+      // Lưu evaluation result để sẵn sàng cho Step 3
+      setEvaluationResult(evalResponse);
+
+      // Không tự động chuyển sang Step 3
+      // setCurrentStep(3); <- Bỏ dòng này
+
     } catch (err) {
+      console.error('Error in run prompt:', err);
       setError(err instanceof Error ? err.message : 'Failed to run prompt');
     } finally {
       setLoading(false);
@@ -176,8 +242,6 @@ const PromptTool: React.FC = () => {
       setLoading(false);
     }
   };
-
-  const handleBack = () => setCurrentStep(currentStep - 1);
 
   // Add new handlers for Step 2 CRUD operations
   const handlePromptEdit = (newPrompt: string) => {
@@ -222,6 +286,16 @@ const PromptTool: React.FC = () => {
     }]
   }), [evaluationResult]);
 
+  // Theo dõi thay đổi của generatedPrompt và promptTestCases
+  useEffect(() => {
+    if (currentStep === 2 && (!generatedPrompt || promptTestCases.length === 0)) {
+      console.warn('Step 2 mounted with empty data:', {
+        generatedPrompt,
+        promptTestCases
+      });
+    }
+  }, [currentStep, generatedPrompt, promptTestCases]);
+
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -247,7 +321,7 @@ const PromptTool: React.FC = () => {
             onDeleteRow={deleteRow}
             onConditionsChange={setConditions}
             onTestCasesChange={setTestCases}
-            onGenerate={handleGenerate}
+            onNext={handleNext}
           />
         )}
 

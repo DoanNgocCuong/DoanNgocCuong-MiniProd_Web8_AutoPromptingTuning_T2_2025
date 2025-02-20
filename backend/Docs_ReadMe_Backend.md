@@ -30,7 +30,7 @@ backend/
 ## 2. Tài liệu API - http://103.253.20.13:25043/docs#/
 
 
-### 2.1 POST
+### 2.1 POST /api/generate-prompt-and-testcases
 /api/generate-prompt-and-testcases
 Generate Prompt And Test Endpoint
 ```bash
@@ -92,25 +92,36 @@ Response
 
 
 
-### 2.1. Run Prompt API
+### 2.2. POST /api/run-prompt
 ```http
 POST /api/run-prompt
 ```
 
 **Request Body**:
 ```json
-{
-  "prompt": "Bạn là một chuyên gia đánh giá phát âm...",
+curl -X 'POST' \
+  'http://103.253.20.13:25043/api/run-prompt' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "prompt": "Bạn là một chuyên gia đánh giá phát âm. Hãy đánh giá phát âm của người dùng theo thang điểm: Phát âm chuẩn/Phát âm không chuẩn.",
   "test_cases": [
     {
-      "input": "Đánh giá phát âm: 'hello'",
       "expected_output": "Phát âm chuẩn",
-      "prompt_output": "",
+      "input": "Đánh giá phát âm: '\''hello'\''",
       "is_correct": false,
-      "similarity_score": 0.0
+      "prompt_output": "",
+      "similarity_score": 0
+    },
+    {
+      "expected_output": "Phát âm không chuẩn",
+      "input": "Đánh giá phát âm: '\''world'\''",
+      "is_correct": false,
+      "prompt_output": "",
+      "similarity_score": 0
     }
   ]
-}
+}'
 ```
 
 **Response**:
@@ -120,12 +131,27 @@ POST /api/run-prompt
     {
       "input": "Đánh giá phát âm: 'hello'",
       "expected_output": "Phát âm chuẩn",
-      "prompt_output": "Phát âm chuẩn",
+      "prompt_output": {
+        "input": "Đánh giá phát âm: 'hello'",
+        "output": "Phát âm của từ \"hello\" được đánh giá là phát âm chuẩn.",
+        "response_time": 0.9693231582641602
+      },
       "is_correct": false,
-      "similarity_score": 0.0
+      "similarity_score": 0
+    },
+    {
+      "input": "Đánh giá phát âm: 'world'",
+      "expected_output": "Phát âm không chuẩn",
+      "prompt_output": {
+        "input": "Đánh giá phát âm: 'world'",
+        "output": "Phát âm của từ \"world\" thường được đánh giá là chuẩn nếu người nói phát âm rõ ràng, với âm \"w\" ở đầu, âm \"or\" được phát âm như trong từ \"word\", và âm \"ld\" ở cuối được phát âm một cách mượt mà. Nếu có sự nhầm lẫn trong âm \"or\" hoặc không phát âm rõ âm \"ld\", thì có thể coi là phát âm không chuẩn. \n\nTóm lại, nếu bạn phát âm \"world\" một cách rõ ràng và chính xác, thì đó là phát âm chuẩn. Nếu không, thì sẽ là phát âm không chuẩn.",
+        "response_time": 2.662405252456665
+      },
+      "is_correct": false,
+      "similarity_score": 0
     }
   ],
-  "total_time": 1.234
+  "total_time": 3.632262945175171
 }
 ```
 

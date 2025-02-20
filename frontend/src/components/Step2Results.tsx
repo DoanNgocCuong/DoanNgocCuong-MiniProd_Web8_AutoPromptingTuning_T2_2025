@@ -54,6 +54,22 @@ export const Step2Results: React.FC<Step2Props> = ({
     console.log('Test cases updated:', testCases);
   }, [testCases]);
 
+  // Log props khi component mount và khi props thay đổi
+  useEffect(() => {
+    console.log('Step2Results mounted/updated with props:', {
+      generated_prompt,
+      testCases,
+      loading,
+      error,
+      onBack,
+      onRunPrompt,
+      onPromptEdit,
+      onTestCaseEdit,
+      onTestCaseAdd,
+      onTestCaseDelete
+    });
+  }, [generated_prompt, testCases, loading, error, onBack, onRunPrompt, onPromptEdit, onTestCaseEdit, onTestCaseAdd, onTestCaseDelete]);
+
   const handlePromptSave = () => {
     console.log('Saving new prompt:', editedPrompt);
     onPromptEdit(editedPrompt);
