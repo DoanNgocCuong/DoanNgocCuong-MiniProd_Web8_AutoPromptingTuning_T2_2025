@@ -9,11 +9,11 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
-# Copy source files
-COPY . .
-
 # Create a .env file with the port configuration
 RUN echo "PORT=25044" > .env
+
+# Copy source files
+COPY . .
 
 # Type check and build the application
 RUN npm run build

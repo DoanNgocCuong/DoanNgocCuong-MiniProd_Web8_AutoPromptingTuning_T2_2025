@@ -15,7 +15,9 @@
     "react-icons": "^4.10.0",
     "lodash": "^4.17.21",
     "serve": "^14.2.1",
-    "react-scripts": "5.0.1"
+    "react-scripts": "5.0.1",
+    "chart.js": "^4.3.0",
+    "react-chartjs-2": "^5.2.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.0",

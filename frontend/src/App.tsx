@@ -1,331 +1,250 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { FiCopy, FiSun, FiMoon, FiSave, FiTrash2, FiEdit2 } from "react-icons/fi";
-import { debounce } from "lodash";
+import React, { useState, useMemo, useCallback } from "react";
+import { FiChevronRight, FiEdit2, FiTrash2, FiCheck, FiX } from "react-icons/fi";
+import { BiRefresh } from "react-icons/bi";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import { Doughnut } from "react-chartjs-2";
 
-interface SamplesInput {
-  [key: string]: string;
-}
+ChartJS.register(ArcElement, Tooltip, Legend);
 
-interface EvaluationResults {
-  error?: string;
-  [key: string]: any;
-}
+const PromptTool = () => {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [jsonInput, setJsonInput] = useState("");
+  const [inputOutputRows, setInputOutputRows] = useState([{ input: "", output: "" }]);
+  const [conditions, setConditions] = useState("");
+  const [testCases, setTestCases] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState(null);
+  const [evaluation, setEvaluation] = useState(null);
 
-interface TestCase {
-  input?: string;
-  output?: string;
-}
-
-const PromptInterface: React.FC = () => {
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<"prompt" | "tests" | "results">("prompt");
-  const [jsonInput, setJsonInput] = useState<string>("");
-  const [samplesInput, setSamplesInput] = useState<SamplesInput>({
-    input1: "",
-    output1: "",
-    input2: "",
-    output2: "",
-    input3: "",
-    output3: ""
-  });
-  const [guidelines, setGuidelines] = useState<string>("");
-  const [generatedPrompt, setGeneratedPrompt] = useState<string>("");
-  const [testCases, setTestCases] = useState<TestCase[]>([]);
-  const [evaluationResults, setEvaluationResults] = useState<EvaluationResults | null>(null);
-
-  const handleThemeToggle = () => {
-    setIsDarkMode(!isDarkMode);
+  const addRow = () => {
+    setInputOutputRows([...inputOutputRows, { input: "", output: "" }]);
   };
 
-  const debouncedInputChange = useCallback(
-    debounce((value: any, setter: (value: any) => void) => {
-      setter(value);
-    }, 300),
-    []
-  );
-
-  const handleGeneratePrompt = async () => {
-    setLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setGeneratedPrompt("Sample generated prompt based on inputs...");
-      setTestCases([{ input: "Test Case 1" }, { input: "Test Case 2" }]);
-    } catch (error) {
-      console.error("Error generating prompt:", error);
-    }
-    setLoading(false);
+  const deleteRow = (index) => {
+    const newRows = inputOutputRows.filter((_, i) => i !== index);
+    setInputOutputRows(newRows);
   };
 
-  const handleRegeneratePrompt = async () => {
+  const updateRow = (index, field, value) => {
+    const newRows = [...inputOutputRows];
+    newRows[index][field] = value;
+    setInputOutputRows(newRows);
+  };
+
+  const handleGenerate = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/generate-prompt', {
-        method: 'POST',
+      const response = await fetch("/api/run-prompt", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           jsonInput,
-          samplesInput,
-          guidelines
+          inputOutputRows,
+          conditions,
+          testCases
         })
       });
       const data = await response.json();
-      setGeneratedPrompt(data.prompt);
-      setTestCases(data.testCases || []);
+      if (!response.ok) throw new Error(data.message);
+      setResults(data);
+      setCurrentStep(2);
     } catch (error) {
-      console.error("Error regenerating prompt:", error);
+      console.error("Generation failed:", error);
     }
     setLoading(false);
   };
 
-  const handleRunPrompt = async () => {
-    if (!generatedPrompt) return;
-    
+  const handleEvaluate = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/run-prompt', {
-        method: 'POST',
+      const response = await fetch("/api/evaluate-results", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          prompt: generatedPrompt,
-          testCases,
-          samplesInput
+          results,
+          inputOutputRows
         })
       });
-      const data = await response.json();
-      setEvaluationResults(data.results);
-      setActiveTab('results');
+      const evaluationData = await response.json();
+      if (!response.ok) throw new Error(evaluationData.message);
+      setEvaluation(evaluationData);
+      setCurrentStep(3);
     } catch (error) {
-      console.error('Error running prompt:', error);
-      setEvaluationResults({ error: 'Failed to run prompt' });
+      console.error("Evaluation failed:", error);
     }
     setLoading(false);
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
+  const handleBack = () => {
+    setCurrentStep(currentStep - 1);
   };
 
+  const chartData = useMemo(() => ({
+    labels: ["Passed", "Failed"],
+    datasets: [{
+      data: evaluation ? [evaluation.passed, evaluation.failed] : [0, 0],
+      backgroundColor: ["#4ade80", "#f87171"],
+      borderWidth: 0
+    }]
+  }), [evaluation]);
+
+  const StepIndicator = ({ step, title, active, completed }) => (
+    <div className={`flex items-center ${completed ? "text-green-500" : active ? "text-blue-600" : "text-gray-400"}`}>
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${completed ? "border-green-500 bg-green-50" : active ? "border-blue-600 bg-blue-50" : "border-gray-300"}`}>
+        {completed ? <FiCheck /> : step}
+      </div>
+      <span className="ml-2 font-medium">{title}</span>
+      {step < 3 && <FiChevronRight className="mx-4" />}
+    </div>
+  );
+
   return (
-    <div className={`min-h-screen ${isDarkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"}`}>
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Prompt Generation Interface</h1>
-          <button
-            onClick={handleThemeToggle}
-            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
-          >
-            {isDarkMode ? <FiSun className="w-6 h-6" /> : <FiMoon className="w-6 h-6" />}
-          </button>
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-center mb-8">
+          <div className="flex items-center">
+            <StepIndicator step={1} title="Input" active={currentStep === 1} completed={currentStep > 1} />
+            <StepIndicator step={2} title="Execution" active={currentStep === 2} completed={currentStep > 2} />
+            <StepIndicator step={3} title="Evaluation" active={currentStep === 3} completed={currentStep > 3} />
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Left Column */}
+        {currentStep === 1 && (
           <div className="space-y-6">
-            {/* JSON Configuration */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
-              <h2 className="text-xl font-semibold mb-4">JSON Configuration</h2>
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold mb-4">JSON Input</h2>
               <textarea
-                className="w-full h-48 p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-                placeholder="Enter JSON configuration..."
-                onChange={(e) => debouncedInputChange(e.target.value, setJsonInput)}
+                className="w-full h-40 p-3 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter JSON format here"
+                value={jsonInput}
+                onChange={(e) => setJsonInput(e.target.value)}
               />
             </div>
 
-            {/* Samples Input/Output */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
-              <h2 className="text-xl font-semibold mb-4">Samples Input/Output</h2>
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold mb-4">Input-Output Examples</h2>
               <div className="space-y-4">
-                {[1, 2, 3].map((index) => (
-                  <div key={index} className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Input {index}</label>
-                      <textarea
-                        className="w-full h-24 p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-                        placeholder={`Enter input sample ${index}...`}
-                        onChange={(e) => {
-                          const newSamplesInput = { ...samplesInput };
-                          newSamplesInput[`input${index}`] = e.target.value;
-                          debouncedInputChange(newSamplesInput, setSamplesInput);
-                        }}
-                        value={samplesInput[`input${index}`] || ""}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Output {index}</label>
-                      <textarea
-                        className="w-full h-24 p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-                        placeholder={`Enter output sample ${index}...`}
-                        onChange={(e) => {
-                          const newSamplesInput = { ...samplesInput };
-                          newSamplesInput[`output${index}`] = e.target.value;
-                          debouncedInputChange(newSamplesInput, setSamplesInput);
-                        }}
-                        value={samplesInput[`output${index}`] || ""}
-                      />
-                    </div>
+                {inputOutputRows.map((row, index) => (
+                  <div key={index} className="flex space-x-4">
+                    <input
+                      type="text"
+                      className="flex-1 p-2 border rounded-md"
+                      placeholder="Input"
+                      value={row.input}
+                      onChange={(e) => updateRow(index, "input", e.target.value)}
+                    />
+                    <input
+                      type="text"
+                      className="flex-1 p-2 border rounded-md"
+                      placeholder="Output"
+                      value={row.output}
+                      onChange={(e) => updateRow(index, "output", e.target.value)}
+                    />
+                    <button
+                      onClick={() => deleteRow(index)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-md"
+                    >
+                      <FiTrash2 />
+                    </button>
                   </div>
                 ))}
                 <button
-                  className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                  onClick={() => {
-                    if (Object.keys(samplesInput).length / 2 < 5) {
-                      const newIndex = Object.keys(samplesInput).length / 2 + 1;
-                      setSamplesInput({
-                        ...samplesInput,
-                        [`input${newIndex}`]: "",
-                        [`output${newIndex}`]: ""
-                      });
-                    }
-                  }}
-                  disabled={Object.keys(samplesInput).length >= 10}
+                  onClick={addRow}
+                  className="mt-2 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-md"
                 >
-                  Add Sample Pair
+                  + Add Row
                 </button>
               </div>
             </div>
 
-            {/* Guidelines */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
-              <h2 className="text-xl font-semibold mb-4">Guidelines</h2>
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold mb-4">Conditions</h2>
               <textarea
-                className="w-full h-48 p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-                placeholder="Enter guidelines..."
-                onChange={(e) => debouncedInputChange(e.target.value, setGuidelines)}
+                className="w-full h-32 p-3 border rounded-md"
+                placeholder="Enter specific requirements..."
+                value={conditions}
+                onChange={(e) => setConditions(e.target.value)}
               />
             </div>
-          </div>
 
-          {/* Right Column */}
-          <div className="space-y-6">
-            {/* Tabs and Content */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
-              <div className="flex space-x-4 mb-4">
-                <button
-                  className={`px-4 py-2 rounded-lg ${activeTab === "prompt" ? "bg-blue-500 text-white" : "bg-gray-200 dark:bg-gray-700"}`}
-                  onClick={() => setActiveTab("prompt")}
-                >
-                  Generated Prompt
-                </button>
-                <button
-                  className={`px-4 py-2 rounded-lg ${activeTab === "tests" ? "bg-blue-500 text-white" : "bg-gray-200 dark:bg-gray-700"}`}
-                  onClick={() => setActiveTab("tests")}
-                >
-                  Test Cases
-                </button>
-                <button
-                  className={`px-4 py-2 rounded-lg ${activeTab === "results" ? "bg-blue-500 text-white" : "bg-gray-200 dark:bg-gray-700"}`}
-                  onClick={() => setActiveTab("results")}
-                >
-                  Results
-                </button>
-              </div>
-
-              <div className="min-h-[400px] bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                {activeTab === "prompt" && (
-                  <div className="relative">
-                    <textarea
-                      className="w-full h-96 p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-                      value={generatedPrompt}
-                      readOnly
-                    />
-                    <button
-                      onClick={() => copyToClipboard(generatedPrompt)}
-                      className="absolute top-2 right-2 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
-                    >
-                      <FiCopy className="w-5 h-5" />
-                    </button>
-                  </div>
-                )}
-
-                {activeTab === "tests" && (
-                  <div className="space-y-4">
-                    {testCases.map((test, index) => (
-                      <div key={index} className="flex flex-col p-4 bg-white dark:bg-gray-800 rounded-lg">
-                        <div className="flex justify-between items-center mb-3">
-                          <h3 className="font-medium">Test Case {index + 1}</h3>
-                          <div className="flex space-x-2">
-                            <button className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg">
-                              <FiEdit2 className="w-5 h-5" />
-                            </button>
-                            <button className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg">
-                              <FiTrash2 className="w-5 h-5" />
-                            </button>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-1 gap-4">
-                          <div className="space-y-2">
-                            <label className="block text-sm font-medium">Input:</label>
-                            <textarea
-                              className="w-full h-24 p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-                              value={test.input || test}
-                              readOnly
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <label className="block text-sm font-medium">Expected Output:</label>
-                            <textarea
-                              className="w-full h-24 p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-                              value={test.output || ""}
-                              readOnly
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {activeTab === "results" && (
-                  <div className="p-4 bg-white dark:bg-gray-800 rounded-lg">
-                    <pre className="whitespace-pre-wrap">
-                      {JSON.stringify(evaluationResults, null, 2) || "No results yet"}
-                    </pre>
-                  </div>
-                )}
-              </div>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={handleGenerate}
+                disabled={loading}
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center space-x-2"
+              >
+                {loading && <AiOutlineLoading3Quarters className="animate-spin" />}
+                <span>Generate</span>
+              </button>
             </div>
+          </div>
+        )}
 
-            {/* Action Buttons */}
+        {currentStep === 2 && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold mb-4">Execution</h2>
             <div className="flex space-x-4">
               <button
-                onClick={handleGeneratePrompt}
+                onClick={handleBack}
                 disabled={loading}
-                className="flex-1 bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 disabled:bg-gray-400"
+                className="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 flex items-center space-x-2"
               >
-                {loading ? "Generating..." : "Generate Prompt & Test Cases"}
+                Back
               </button>
               <button
-                onClick={handleRegeneratePrompt}
-                disabled={loading || !generatedPrompt}
-                className="flex-1 bg-yellow-500 text-white py-3 rounded-lg hover:bg-yellow-600 disabled:bg-gray-400"
+                onClick={handleEvaluate}
+                disabled={loading}
+                className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center space-x-2"
               >
-                Generate Prompt Again
-              </button>
-              <button
-                onClick={handleRunPrompt}
-                disabled={!generatedPrompt || loading}
-                className="flex-1 bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 disabled:bg-gray-400"
-              >
-                {loading ? "Running..." : "Run Prompt"}
-              </button>
-              <button
-                onClick={() => {}}
-                disabled={!generatedPrompt}
-                className="flex-1 bg-purple-500 text-white py-3 rounded-lg hover:bg-purple-600 disabled:bg-gray-400"
-              >
+                {loading && <AiOutlineLoading3Quarters className="animate-spin mr-2" />}
                 Evaluate Results
               </button>
             </div>
           </div>
-        </div>
+        )}
+
+        {currentStep === 3 && evaluation && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold mb-4">Evaluation Results</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-blue-600">{evaluation.successRate}%</div>
+                  <div className="text-gray-600">Success Rate</div>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-4 text-center">
+                  <div className="p-3 bg-white rounded-lg">
+                    <div className="text-2xl font-semibold text-green-500">{evaluation.passed}</div>
+                    <div className="text-sm text-gray-600">Passed</div>
+                  </div>
+                  <div className="p-3 bg-white rounded-lg">
+                    <div className="text-2xl font-semibold text-red-500">{evaluation.failed}</div>
+                    <div className="text-sm text-gray-600">Failed</div>
+                  </div>
+                </div>
+              </div>
+              <div className="w-full h-64">
+                <Doughnut data={chartData} options={{ maintainAspectRatio: false }} />
+              </div>
+            </div>
+            <div className="mt-6">
+              <button
+                onClick={handleBack}
+                className="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 flex items-center space-x-2"
+              >
+                Back
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default PromptInterface; 
+export default PromptTool;
