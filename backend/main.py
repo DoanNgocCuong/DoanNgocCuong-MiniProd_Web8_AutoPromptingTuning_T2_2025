@@ -154,7 +154,7 @@ async def feedback_endpoint(request: FeedbackRequest):
 async def health_check():
     return {"status": "healthy"}
 
-@app.post("/api/generate-prompt-and-test", response_model=PromptAndTestResponse)
+@app.post("/api/generate-prompt-and-testcases", response_model=PromptAndTestResponse)
 async def generate_prompt_and_test_endpoint(request: PromptAndTestRequest):
     """Generate prompt and test cases in one call"""
     try:

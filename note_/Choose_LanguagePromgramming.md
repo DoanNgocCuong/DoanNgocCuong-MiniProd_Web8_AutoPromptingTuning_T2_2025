@@ -4,7 +4,6 @@
 - **HTML**: Ngôn ngữ đánh dấu siêu văn bản, tạo cấu trúc cho trang web.
 - **CSS**: Ngôn ngữ tạo kiểu, thiết kế giao diện và bố cục trang web.
 - **JavaScript**: Ngôn ngữ lập trình cho phép tạo các tính năng tương tác trên trang web.
-
 Ngoài ra, các thư viện và framework JavaScript như **ReactJS**, **AngularJS**, và **VueJS** cũng được sử dụng rộng rãi để xây dựng giao diện người dùng hiệu quả. citeturn0search0
 
 **Backend:**
