@@ -132,13 +132,6 @@ const PromptTool: React.FC = () => {
         throw new Error('JSON input is required');
       }
 
-      // Validate JSON format
-      try {
-        JSON.parse(jsonInput);
-      } catch (e) {
-        throw new Error('Invalid JSON format');
-      }
-
       // Validate input-output examples
       if (!inputOutputRows.some(row => row.input && row.output)) {
         throw new Error('At least one complete input-output example is required');
