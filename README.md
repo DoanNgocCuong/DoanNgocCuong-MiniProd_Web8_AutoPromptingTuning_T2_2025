@@ -31,3 +31,6 @@ Estimate: 16h - Chiều T4 demo - Chiều T5 đóng
 4. User đánh giá và feedback lại.
 5. Update Prompt.
 6. Lặp lại bước 3, 4, 5.
+
+![](v2_step1_GeneratePromptAndTestCases.png)
+![](v2_step2_RunPrompt.png)
