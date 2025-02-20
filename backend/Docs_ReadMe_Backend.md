@@ -17,30 +17,15 @@ backend/
 └── requirements.txt     # Dependencies
 ```
 
-### 1.2. Luồng xử lý
-```mermaid
-graph TD
-    A[Client] --> B[/api/run-prompt]
-    B --> C[PromptTestRunner]
-    C --> D[OpenAI API]
-    D --> E[Test Cases với Prompt Output]
-    E --> F[/api/evaluate-results]
-    F --> G[PromptEvaluator]
-    G --> H[Kết quả đánh giá]
-    H --> A
-```
+### 1.2. Luồng xử lý dự kiến 
+1. Gen Prompt và Test cases (dựa vào: Format JSON + Samples Input Output + Conditions Promp)
 
-1. **Chạy Prompt**:
-   - Client gửi prompt + test cases
-   - PromptTestRunner xử lý từng test case
-   - Gọi OpenAI API để lấy output
-   - Trả về test cases đã có prompt_output
+2. Chạy Prompt và Test cases (dựa vào: Prompt + Test cases)
 
-2. **Đánh giá Kết quả**:
-   - Client gửi test cases đã có prompt_output
-   - PromptEvaluator tính toán độ chính xác
-   - So sánh với expected output
-   - Trả về metrics đánh giá
+3. Đánh giá Kết quả (Prompt so sánh output_prompt vs Expected_output từ Test Cases). 
+
+---
+
 
 ## 2. Tài liệu API
 
@@ -139,46 +124,3 @@ PORT=25043
 # Check logs
 docker logs auto-prompting-backend
 ```
-
-## 4. Monitoring & Logging
-
-### 4.1. Logging
-- Sử dụng Python logging module
-- Log được lưu trong container logs
-- Format: `[Level] [Module] Message`
-
-### 4.2. Metrics
-- Accuracy: Tỷ lệ test cases đúng
-- Similarity Score: Độ tương đồng output
-- Response Time: Thời gian xử lý
-- Total Time: Tổng thời gian request
-
-## 5. Error Handling
-
-### 5.1. Common Errors
-- OpenAI API errors
-- Invalid prompt format
-- Test case validation errors
-
-### 5.2. Error Response Format
-```json
-{
-  "detail": "Error message"
-}
-```
-
-## 6. Security
-- CORS configuration
-- API key validation
-- Rate limiting (TODO)
-- Input validation via Pydantic
-
-## 7. Future Improvements
-1. Caching mechanism
-2. Batch processing
-3. Advanced similarity metrics
-4. Retry mechanism
-5. Rate limiting
-6. Performance optimization
-
-Cần thêm thông tin gì không?
