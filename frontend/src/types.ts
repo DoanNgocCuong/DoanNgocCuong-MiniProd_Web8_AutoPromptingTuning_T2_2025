@@ -1,6 +1,7 @@
 export interface InputOutputRow {
   input: string;
   output: string;
+  response_time?: number;
 }
 
 export interface PromptOutput {

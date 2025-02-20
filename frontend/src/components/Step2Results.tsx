@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { TestCase, PromptOutput } from '../types';
+import { TestCase, PromptOutput, InputOutputRow } from '../types';
 import { FiUpload, FiPlay, FiSquare, FiAlertCircle, FiChevronDown, FiChevronUp, FiMaximize2, FiMinimize2, FiDownload, FiTrash2 } from "react-icons/fi";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -18,7 +18,7 @@ interface Step2Props {
   onTestCaseDelete: (index: number) => void;
   setError: (error: string | null) => void;
   onTestCasesReplace: (testCases: TestCase[]) => void;
-  inputOutputRows: PromptOutput[];
+  inputOutputRows: InputOutputRow[];
 }
 
 const getPromptOutput = (testCase: TestCase): string => {

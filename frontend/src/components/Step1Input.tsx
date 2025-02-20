@@ -11,7 +11,11 @@ interface Step1Props {
   loading: boolean;
   error: string | null;
   onJsonInputChange: (value: string) => void;
-  onInputOutputChange: (e: React.ChangeEvent<HTMLInputElement>, index: number, field: keyof InputOutputRow) => void;
+  onInputOutputChange: (
+    e: React.ChangeEvent<HTMLInputElement>, 
+    index: number, 
+    field: 'input' | 'output'
+  ) => void;
   onAddRow: () => void;
   onDeleteRow: (index: number) => void;
   onConditionsChange: (value: string) => void;

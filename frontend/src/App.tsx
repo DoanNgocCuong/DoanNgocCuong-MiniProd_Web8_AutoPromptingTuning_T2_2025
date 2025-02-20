@@ -15,6 +15,7 @@ import {
   EvaluationResult,
   ApiResponse
 } from './types';
+import { toast } from "react-hot-toast";
 
 // Register ChartJS components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -136,9 +137,16 @@ const PromptTool: React.FC = () => {
     setError(null);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, index: number, field: keyof InputOutputRow) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>, 
+    index: number, 
+    field: 'input' | 'output' // Chỉ định rõ các field được phép
+  ) => {
     const newRows = [...inputOutputRows];
-    newRows[index][field] = e.target.value;
+    newRows[index] = {
+      ...newRows[index],
+      [field]: e.target.value
+    };
     setInputOutputRows(newRows);
   };
 
@@ -205,32 +213,34 @@ const PromptTool: React.FC = () => {
     setError(null);
 
     try {
+      // Chuẩn bị test cases theo đúng format API yêu cầu
+      const formattedTestCases = promptTestCases.map(tc => ({
+        input: tc.input,
+        expected_output: tc.expected_output,
+        model: tc.model || 'GPT-4',
+        system_prompt: tc.system_prompt || '',
+        conversation_history: tc.conversation_history || '',
+        // Thêm các trường bắt buộc với giá trị mặc định
+        is_correct: false,
+        prompt_output: '',
+        similarity_score: 0
+      }));
+
       console.log('Running prompt with data:', {
         prompt: generatedPrompt,
-        test_cases: promptTestCases.map(tc => ({
-          input: tc.input,
-          expected_output: tc.expected_output,
-          model: tc.model || 'GPT-4',
-          system_prompt: tc.system_prompt || '',
-          conversation_history: tc.conversation_history || ''
-        }))
+        test_cases: formattedTestCases
       });
 
       const response = await apiService.post<RunPromptResponse>('/run-prompt', {
         prompt: generatedPrompt,
-        test_cases: promptTestCases.map(tc => ({
-          input: tc.input,
-          expected_output: tc.expected_output,
-          model: tc.model || 'GPT-4',
-          system_prompt: tc.system_prompt || '',
-          conversation_history: tc.conversation_history || ''
-        }))
+        test_cases: formattedTestCases
       });
 
       if (!response.test_cases?.length) {
         throw new Error('No test cases in response');
       }
 
+      // Cập nhật state với kết quả từ API
       setPromptTestCases(response.test_cases);
 
       // Pre-fetch evaluation
@@ -242,7 +252,9 @@ const PromptTool: React.FC = () => {
 
     } catch (err) {
       console.error('Error in run prompt:', err);
-      setError(err instanceof Error ? err.message : 'Failed to run prompt');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to run prompt';
+      setError(errorMessage);
+      toast.error(errorMessage); // Thêm thông báo lỗi cho người dùng
     } finally {
       setLoading(false);
     }
@@ -367,6 +379,10 @@ const PromptTool: React.FC = () => {
             onTestCaseDelete={handleTestCaseDelete}
             setError={setError}
             onTestCasesReplace={handleTestCasesReplace}
+            inputOutputRows={inputOutputRows.map(row => ({
+              ...row,
+              response_time: 0 // Thêm default response_time
+            }))}
           />
         )}
 
